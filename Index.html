@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#080b0a">
+  <meta name="description" content="3D SHOOTER - scanner e explorador de ambientes 3D.">
+  <title>3D SHOOTER | Environment Scanner</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">
+      <span class="brand-icon">3D</span>
+      <span>SHOOTER<small>ENVIRONMENT SYSTEM</small></span>
+    </a>
+    <span class="status"><i></i> SYSTEM ONLINE</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">SPATIAL TECHNOLOGY / 001</div>
+      <h1>YOUR WORLD.<br><span>RECONSTRUCTED.</span></h1>
+      <p>Capture your environment. Build your world. Explore in first person.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="viewport" id="viewport">
+        <div class="view-label">
+          <span id="viewMode">3D ENVIRONMENT</span>
+          <span id="viewStatus">INITIALIZING...</span>
+        </div>
+        <div id="canvasHost"></div>
+        <div class="crosshair" id="crosshair">+</div>
+        <div class="loading" id="loading">INITIALIZING 3D ENGINE...</div>
+        <div class="mobile-hint" id="mobileHint">Arraste a tela para olhar ao redor</div>
+      </div>
+
+      <div class="toolbar">
+        <button id="buildBtn" class="primary">BUILD ENVIRONMENT</button>
+        <button id="walkBtn">FIRST PERSON</button>
+        <button id="resetBtn">RESET VIEW</button>
+        <button id="arBtn">AR MODE · EXPERIMENTAL</button>
+      </div>
+
+      <div class="panel-grid">
+        <section class="panel">
+          <div class="panel-heading">
+            <span class="number">01</span>
+            <div><h2>ENVIRONMENT SCANNER</h2><p>Import one image for each surface.</p></div>
+          </div>
+
+          <div class="photo-grid">
+            <label class="photo-slot">
+              <span class="surface-icon">↑</span>
+              <b>CEILING</b><small id="name-ceiling">Select photo</small>
+              <input type="file" accept="image/*" data-surface="ceiling">
+            </label>
+            <label class="photo-slot">
+              <span class="surface-icon">↓</span>
+              <b>FLOOR</b><small id="name-floor">Select photo</small>
+              <input type="file" accept="image/*" data-surface="floor">
+            </label>
+            <label class="photo-slot">
+              <span class="surface-icon">N</span>
+              <b>FRONT WALL</b><small id="name-front">Select photo</small>
+              <input type="file" accept="image/*" data-surface="front">
+            </label>
+            <label class="photo-slot">
+              <span class="surface-icon">S</span>
+              <b>BACK WALL</b><small id="name-back">Select photo</small>
+              <input type="file" accept="image/*" data-surface="back">
+            </label>
+            <label class="photo-slot">
+              <span class="surface-icon">W</span>
+              <b>LEFT WALL</b><small id="name-left">Select photo</small>
+              <input type="file" accept="image/*" data-surface="left">
+            </label>
+            <label class="photo-slot">
+              <span class="surface-icon">E</span>
+              <b>RIGHT WALL</b><small id="name-right">Select photo</small>
+              <input type="file" accept="image/*" data-surface="right">
+            </label>
+          </div>
+
+          <div class="notice">
+            <span>INFO</span>
+            Photos are used as surface textures. This version does not automatically infer exact room geometry.
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <span class="number">02</span>
+            <div><h2>DIMENSIONS</h2><p>Set the approximate room size.</p></div>
+          </div>
+
+          <div class="dimension">
+            <label for="roomWidth">WIDTH <span>meters</span></label>
+            <input id="roomWidth" type="number" min="2" max="30" step="0.1" value="4">
+          </div>
+          <div class="dimension">
+            <label for="roomDepth">DEPTH <span>meters</span></label>
+            <input id="roomDepth" type="number" min="2" max="30" step="0.1" value="5">
+          </div>
+          <div class="dimension">
+            <label for="roomHeight">HEIGHT <span>meters</span></label>
+            <input id="roomHeight" type="number" min="2" max="8" step="0.1" value="2.8">
+          </div>
+
+          <button id="applyBtn" class="full-button">APPLY DIMENSIONS</button>
+
+          <div class="divider"></div>
+          <div class="panel-heading compact">
+            <span class="number">03</span>
+            <div><h2>EXPLORATION</h2><p>Movement controls.</p></div>
+          </div>
+          <div class="control-info">
+            <span>W A S D</span><p>Move around</p>
+          </div>
+          <div class="control-info">
+            <span>DRAG</span><p>Look around</p>
+          </div>
+          <div class="control-info">
+            <span>SHIFT</span><p>Move faster</p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <footer>
+      <span>3D SHOOTER © 2026</span>
+      <span>SPATIAL ENGINE / PROTOTYPE 0.1</span>
+    </footer>
+  </main>
+
+  <div id="toast" role="status"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
