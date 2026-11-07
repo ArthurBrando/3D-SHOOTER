@@ -4,7 +4,9 @@
 <meta charset="-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Ping Pong Cartoon</title>
-<link rel="icon" type="image/jpeg" href="raquete.jpg">
+<link rel="icon" type="image/jpeg" href="raquete.jpg?v=2">
+<link rel="shortcut icon" type="image/jpeg" href="raquete.jpg?v=2">
+<link rel="apple-touch-icon" href="raquete.jpg?v=2">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -38,7 +40,7 @@
     height: 100%;
     overflow: hidden;
     font-family: 'Nunito', sans-serif;
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f3460 100%);
     color: var(--ink);
   }
 
@@ -322,7 +324,7 @@
     <div class="score-box" id="scoreRight">0</div>
   </div>
 
-  <div id="cameraHint" class="camera-hint">Arraste com 2 dedos / Botao direito para mover camera</div>
+  <div id="cameraHint" class="camera-hint">Arraste a raquete para mover &bull; 2 dedos / Botao direito para camera</div>
 
   <div id="pauseOverlay" class="pause-overlay">
     <h2>Pausado</h2>
@@ -331,10 +333,9 @@
     <button class="btn btn-red" onclick="backToMenu()">Sair para o Menu</button>
   </div>
 
-  <!-- Lobby -->
   <div id="lobbyScreen" class="screen active">
     <h1>PING PONG</h1>
-    <div class="subtitle">Arraste a raquete &bull; Mova a camera</div>
+    <div class="subtitle">Arraste a raquete livremente &bull; Mova a camera</div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="startSinglePlayer()">1 Jogador vs Robo</button>
       <button class="btn btn-secondary" onclick="startMultiPlayer()">2 Jogadores Local</button>
@@ -342,7 +343,8 @@
     </div>
     <div class="controls-info">
       <h3>Como Jogar</h3>
-      <p><strong>Arraste</strong> a raquete com dedo/mouse para se mover</p>
+      <p><strong>Arraste</strong> a raquete com dedo/mouse para se mover em <strong>todos os lados</strong></p>
+      <p>Incluindo para os <strong>lados da mesa</strong> e para <strong>tras</strong> (alem da linha)</p>
       <p><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> ou <span class="key">Setas</span> para camera</p>
       <p><span class="key">Botao direito</span> do mouse e arraste para camera</p>
       <p><span class="key">2 dedos</span> no mobile para mover camera</p>
@@ -350,7 +352,6 @@
     </div>
   </div>
 
-  <!-- Settings -->
   <div id="settingsScreen" class="screen">
     <h2>Configuracoes</h2>
     <div class="settings-panel">
@@ -381,7 +382,6 @@
     </div>
   </div>
 
-  <!-- Game Over -->
   <div id="gameOverScreen" class="screen">
     <h1 id="winnerText">Vencedor!</h1>
     <div class="subtitle" id="gameOverSubtitle">Placar Final</div>
@@ -420,7 +420,6 @@ const difficultyConfig = {
 /* ============================
    CAMERA E MESA
    ============================ */
-// Mesa em coordenadas do mundo (proporcao 9:16)
 const TABLE_W = 450;
 const TABLE_H = 800;
 
@@ -429,9 +428,8 @@ let isPanning = false;
 let panStart = { x: 0, y: 0 };
 let cameraStart = { x: 0, y: 0 };
 
-// Limites da camera
 function clampCamera() {
-  const margin = 100;
+  const margin = 150;
   camera.x = Math.max(-margin, Math.min(margin, camera.x));
   camera.y = Math.max(-margin, Math.min(margin, camera.y));
 }
@@ -447,7 +445,7 @@ function initGame() {
 
   paddleLeft = {
     x: TABLE_W / 2,
-    y: TABLE_H - 80,
+    y: TABLE_H - 100,
     width: paddleW,
     height: paddleH,
     color: '#FF6B6B',
@@ -459,7 +457,7 @@ function initGame() {
 
   paddleRight = {
     x: TABLE_W / 2,
-    y: 80,
+    y: 100,
     width: paddleW,
     height: paddleH,
     color: '#4ECDC4',
@@ -510,7 +508,6 @@ window.addEventListener('keyup', (e) => {
   keys[e.key.toLowerCase()] = false;
 });
 
-// Camera com WASD / Setas
 function updateCameraKeys() {
   const speed = 6;
   if (keys['w'] || keys['arrowup']) camera.y -= speed;
@@ -520,7 +517,7 @@ function updateCameraKeys() {
   clampCamera();
 }
 
-// === MOUSE ===
+/* MOUSE */
 canvas.addEventListener('mousedown', (e) => {
   if (gameState !== 'playing' && gameState !== 'paused') return;
   const rect = canvas.getBoundingClientRect();
@@ -529,7 +526,6 @@ canvas.addEventListener('mousedown', (e) => {
   const mx = (e.clientX - rect.left) * scaleX;
   const my = (e.clientY - rect.top) * scaleY;
 
-  // Botao direito = pan camera
   if (e.button === 2) {
     isPanning = true;
     panStart = { x: e.clientX, y: e.clientY };
@@ -538,7 +534,6 @@ canvas.addEventListener('mousedown', (e) => {
     return;
   }
 
-  // Botao esquerdo = drag raquete
   const worldPos = screenToWorld(mx, my);
   tryGrabPaddle(worldPos.x, worldPos.y);
 });
@@ -572,7 +567,7 @@ window.addEventListener('mouseup', () => {
 
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-// === TOUCH ===
+/* TOUCH */
 canvas.addEventListener('touchstart', (e) => {
   if (gameState !== 'playing' && gameState !== 'paused') return;
   e.preventDefault();
@@ -581,7 +576,6 @@ canvas.addEventListener('touchstart', (e) => {
   const scaleY = canvas.height / rect.height;
 
   if (e.touches.length === 2) {
-    // 2 dedos = pan camera
     isPanning = true;
     panStart = {
       x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
@@ -631,9 +625,8 @@ canvas.addEventListener('touchend', (e) => {
   if (e.touches.length === 0) releasePaddles();
 });
 
-// === DRAG LOGIC ===
+/* DRAG LOGIC */
 function tryGrabPaddle(wx, wy) {
-  // Jogador esquerdo (baixo) - sempre pode pegar
   if (pointInPaddle(wx, wy, paddleLeft)) {
     paddleLeft.isDragging = true;
     paddleLeft.dragOffsetX = wx - paddleLeft.x;
@@ -641,7 +634,6 @@ function tryGrabPaddle(wx, wy) {
     return;
   }
 
-  // Jogador direito (cima) - so no modo multiplayer
   if (gameMode === 'multi' && pointInPaddle(wx, wy, paddleRight)) {
     paddleRight.isDragging = true;
     paddleRight.dragOffsetX = wx - paddleRight.x;
@@ -653,12 +645,12 @@ function moveDraggedPaddle(wx, wy) {
   if (paddleLeft.isDragging) {
     paddleLeft.x = wx - paddleLeft.dragOffsetX;
     paddleLeft.y = wy - paddleLeft.dragOffsetY;
-    clampPaddle(paddleLeft, TABLE_H / 2, TABLE_H - 20);
+    clampPaddle(paddleLeft, 'bottom');
   }
   if (paddleRight.isDragging) {
     paddleRight.x = wx - paddleRight.dragOffsetX;
     paddleRight.y = wy - paddleRight.dragOffsetY;
-    clampPaddle(paddleRight, 20, TABLE_H / 2);
+    clampPaddle(paddleRight, 'top');
   }
 }
 
@@ -668,16 +660,28 @@ function releasePaddles() {
 }
 
 function pointInPaddle(px, py, paddle) {
-  return px >= paddle.x - paddle.width / 2 - 15 &&
-         px <= paddle.x + paddle.width / 2 + 15 &&
-         py >= paddle.y - paddle.height / 2 - 15 &&
-         py <= paddle.y + paddle.height / 2 + 15;
+  return px >= paddle.x - paddle.width / 2 - 25 &&
+         px <= paddle.x + paddle.width / 2 + 25 &&
+         py >= paddle.y - paddle.height / 2 - 25 &&
+         py <= paddle.y + paddle.height / 2 + 25;
 }
 
-function clampPaddle(p, minY, maxY) {
+/* CLAMP PADDLE - movimento livre em X e Y, incluindo para os lados e para tras */
+function clampPaddle(p, side) {
   const halfW = p.width / 2;
-  p.x = Math.max(halfW + 10, Math.min(TABLE_W - halfW - 10, p.x));
-  p.y = Math.max(minY, Math.min(maxY, p.y));
+  const halfH = p.height / 2;
+
+  // Limites laterais (X) - pode ir alem da mesa para os lados
+  p.x = Math.max(-80 + halfW, Math.min(TABLE_W + 80 - halfW, p.x));
+
+  // Limites verticais (Y) - pode ir para tras (alem da linha de fundo)
+  if (side === 'bottom') {
+    // Jogador de baixo: pode ir ate a rede (centro) e para tras alem da mesa
+    p.y = Math.max(TABLE_H / 2 + 15, Math.min(TABLE_H + 120 - halfH, p.y));
+  } else {
+    // Jogador de cima: pode ir ate a rede e para tras alem da mesa
+    p.y = Math.max(-120 + halfH, Math.min(TABLE_H / 2 - 15, p.y));
+  }
 }
 
 /* ============================
@@ -704,7 +708,6 @@ function worldToScreen(wx, wy) {
 }
 
 function getScale() {
-  // Escala para caber a mesa no canvas 9:16
   const scaleX = canvas.width / TABLE_W;
   const scaleY = canvas.height / TABLE_H;
   return Math.min(scaleX, scaleY) * 0.92;
@@ -756,7 +759,7 @@ function startGame() {
   document.getElementById('cameraHint').classList.add('active');
   setTimeout(() => {
     document.getElementById('cameraHint').classList.remove('active');
-  }, 4000);
+  }, 6000);
   resizeCanvas();
   camera = { x: 0, y: 0 };
   initGame();
@@ -838,11 +841,10 @@ function updateAI() {
   const cfg = difficultyConfig[settings.difficulty];
   const paddle = paddleRight;
 
-  // So reage se a bola estiver vindo para o robo
   if (ball.dy > 0) return;
 
   const targetX = ball.x;
-  const targetY = ball.y - 60;
+  const targetY = ball.y + 60;
   let diffX = targetX - paddle.x;
   let diffY = targetY - paddle.y;
 
@@ -851,7 +853,7 @@ function updateAI() {
     diffY += (Math.random() - 0.5) * 60;
   }
 
-  const speed = 4 * cfg.speedFactor;
+  const speed = 3.5 * cfg.speedFactor;
 
   if (Math.random() > (1 - cfg.reaction)) {
     if (Math.abs(diffX) > speed) paddle.x += Math.sign(diffX) * speed;
@@ -870,7 +872,7 @@ function updateAI() {
     }
   }
 
-  clampPaddle(paddle, 20, TABLE_H / 2);
+  clampPaddle(paddle, 'top');
 }
 
 function updateBall() {
@@ -879,9 +881,6 @@ function updateBall() {
 
   ball.x += ball.dx;
   ball.y += ball.dy;
-
-  // Sombra da bola (altura simulada)
-  ball.shadowY += (ball.y - ball.shadowY) * 0.3;
 
   // Colisao com paredes laterais da mesa
   if (ball.x - ball.radius < 10) {
@@ -958,6 +957,7 @@ function draw() {
   ctx.scale(scale, scale);
   ctx.translate(-TABLE_W / 2, -TABLE_H / 2);
 
+  drawFloor();
   drawTable();
   drawNet();
   drawBall();
@@ -969,6 +969,22 @@ function draw() {
   if (gameState === 'paused') {
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+function drawFloor() {
+  // Chao ao redor da mesa
+  ctx.fillStyle = '#5a4a3a';
+  ctx.fillRect(-200, -200, TABLE_W + 400, TABLE_H + 400);
+
+  // Linhas do chao (perspectiva)
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = -150; i < TABLE_H + 150; i += 40) {
+    ctx.beginPath();
+    ctx.moveTo(-200, i);
+    ctx.lineTo(TABLE_W + 200, i);
+    ctx.stroke();
   }
 }
 
@@ -1048,7 +1064,6 @@ function drawTableLeg(x, y) {
   ctx.lineWidth = 2;
   ctx.strokeRect(x - 8, y, 16, 50);
 
-  // Rodinha
   ctx.fillStyle = '#333';
   ctx.beginPath();
   ctx.arc(x, y + 55, 6, 0, Math.PI * 2);
@@ -1114,13 +1129,11 @@ function drawPaddle(paddle) {
   const handleLen = 35;
   const handleW = 10;
   if (paddle.y > TABLE_H / 2) {
-    // Jogador de baixo - cabo para baixo
     ctx.fillRect(paddle.x - handleW / 2, paddle.y + h / 2, handleW, handleLen);
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     ctx.strokeRect(paddle.x - handleW / 2, paddle.y + h / 2, handleW, handleLen);
   } else {
-    // Jogador de cima - cabo para cima
     ctx.fillRect(paddle.x - handleW / 2, paddle.y - h / 2 - handleLen, handleW, handleLen);
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
@@ -1165,7 +1178,7 @@ function drawPaddle(paddle) {
 
 function drawBall() {
   // Sombra da bola na mesa
-  const shadowOffset = 4;
+  const shadowOffset = 3;
   ctx.beginPath();
   ctx.ellipse(ball.x + shadowOffset, ball.y + shadowOffset, ball.radius * 0.9, ball.radius * 0.5, 0, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
@@ -1173,18 +1186,18 @@ function drawBall() {
 
   // Rastro
   ball.trail.forEach((pos, i) => {
-    const alpha = (i + 1) / ball.trail.length * 0.35;
+    const alpha = (i + 1) / ball.trail.length * 0.25;
     const size = ball.radius * (i + 1) / ball.trail.length;
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255, 230, 109, ${alpha})`;
+    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
     ctx.fill();
   });
 
-  // Bola
+  // BOLA BRANCA
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-  ctx.fillStyle = '#FFE66D';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fill();
 
   // Contorno preto
@@ -1192,17 +1205,17 @@ function drawBall() {
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
-  // Brilho
+  // Brilho sutil na bola branca
   ctx.beginPath();
   ctx.arc(ball.x - ball.radius * 0.3, ball.y - ball.radius * 0.3, ball.radius * 0.35, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fillStyle = 'rgba(200,220,255,0.6)';
   ctx.fill();
 
   // Linha de rotacao
   ctx.save();
   ctx.translate(ball.x, ball.y);
   ctx.rotate(ball.x * 0.15 + ball.y * 0.1);
-  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(-ball.radius * 0.5, 0);
