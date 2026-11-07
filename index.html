@@ -1,148 +1,1282 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="theme-color" content="#080b0a">
-  <meta name="description" content="3D SHOOTER - scanner e explorador de ambientes 3D.">
-  <title>3D SHOOTER | Environment Scanner</title>
-  <link rel="stylesheet" href="./style.css">
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
-      }
+<meta charset="-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Ping Pong Cartoon</title>
+<link rel="icon" type="image/jpeg" href="raquete.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --ink: #1a1a1a;
+    --accent: #FF6B6B;
+    --accent2: #4ECDC4;
+    --accent3: #FFE66D;
+    --green: #95E1D3;
+    --purple: #A29BFE;
+    --orange: #FF8C42;
+    --table: #2E5C8A;
+    --tableLight: #3A75A8;
+    --line: #fff;
+    --net: #FF6B6B;
+    --shadow: 0 8px 0 rgba(0,0,0,0.25);
+    --radius: 20px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    color: var(--ink);
+  }
+
+  #game-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+
+  canvas {
+    display: block;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    background: #0f3460;
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+
+  .screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f3460 100%);
+    padding: 20px;
+  }
+
+  .screen.active {
+    display: flex;
+  }
+
+  h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 7vw, 4rem);
+    color: var(--accent3);
+    text-shadow: 4px 4px 0 #000, -2px -2px 0 #000;
+    margin-bottom: 10px;
+    text-align: center;
+    letter-spacing: 2px;
+    animation: bounceIn 1s ease;
+  }
+
+  h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.3rem, 4vw, 2rem);
+    color: #fff;
+    text-shadow: 3px 3px 0 #000;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    color: #fff;
+    margin-bottom: 30px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    padding: 14px 30px;
+    margin: 8px;
+    border: 3px solid #000;
+    border-radius: var(--radius);
+    cursor: pointer;
+    box-shadow: 0 6px 0 #000;
+    transition: transform 0.1s, box-shadow 0.1s;
+    color: #000;
+    min-width: 240px;
+    text-align: center;
+    user-select: none;
+  }
+
+  .btn:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 #000;
+  }
+
+  .btn-primary { background: var(--accent3); }
+  .btn-secondary { background: var(--accent2); }
+  .btn-green { background: var(--green); }
+  .btn-purple { background: var(--purple); color: #fff; text-shadow: 1px 1px 0 #000; }
+  .btn-orange { background: var(--orange); }
+  .btn-red { background: var(--accent); color: #fff; }
+
+  .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    max-width: 500px;
+  }
+
+  .settings-panel {
+    background: var(--surface);
+    border: 4px solid #000;
+    border-radius: var(--radius);
+    padding: 25px;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: var(--shadow);
+  }
+
+  .setting-item {
+    margin-bottom: 18px;
+  }
+
+  .setting-item label {
+    display: block;
+    font-weight: 900;
+    font-size: 1rem;
+    margin-bottom: 6px;
+    color: #fff;
+  }
+
+  .setting-item input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent3);
+  }
+
+  .setting-item select {
+    width: 100%;
+    padding: 10px;
+    border: 3px solid #000;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    background: #fff;
+  }
+
+  .value-display {
+    display: inline-block;
+    background: var(--accent3);
+    padding: 2px 10px;
+    border: 2px solid #000;
+    border-radius: 8px;
+    font-weight: 900;
+    margin-left: 10px;
+    color: #000;
+  }
+
+  .back-btn {
+    margin-top: 15px;
+  }
+
+  .hud {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    width: 100%;
+    display: none;
+    justify-content: space-between;
+    padding: 0 25px;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .hud.active {
+    display: flex;
+  }
+
+  .score-box {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.3rem, 3.5vw, 2rem);
+    color: #fff;
+    text-shadow: 3px 3px 0 #000;
+    background: rgba(0,0,0,0.3);
+    padding: 5px 18px;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+
+  .pause-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+  }
+
+  .pause-overlay.active {
+    display: flex;
+  }
+
+  .controls-info {
+    margin-top: 20px;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 15px;
+    padding: 18px;
+    color: #fff;
+    max-width: 450px;
+    text-align: center;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .controls-info h3 {
+    font-family: 'Fredoka One', cursive;
+    margin-bottom: 8px;
+    color: var(--accent3);
+  }
+
+  .key {
+    display: inline-block;
+    background: #fff;
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 2px solid #000;
+    font-weight: 900;
+    font-size: 0.8rem;
+    margin: 0 2px;
+  }
+
+  .camera-hint {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    pointer-events: none;
+    z-index: 5;
+    display: none;
+    white-space: nowrap;
+  }
+
+  .camera-hint.active {
+    display: block;
+  }
+
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @media (max-width: 400px) {
+    .hud {
+      padding: 0 12px;
+      top: 5px;
     }
-  </script>
+    .settings-panel {
+      padding: 18px 12px;
+    }
+  }
+</style>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="./">
-      <span class="brand-icon">3D</span>
-      <span>SHOOTER<small>ENVIRONMENT SYSTEM</small></span>
-    </a>
-    <span class="status"><i></i> SYSTEM ONLINE</span>
-  </header>
 
-  <main>
-    <section class="hero">
-      <div class="eyebrow">SPATIAL TECHNOLOGY / 001</div>
-      <h1>YOUR WORLD.<br><span>RECONSTRUCTED.</span></h1>
-      <p>Capture your environment. Build your world. Explore in first person.</p>
-    </section>
+<div id="game-container">
+  <canvas id="gameCanvas"></canvas>
 
-    <section class="workspace">
-      <div class="viewport" id="viewport">
-        <div class="view-label">
-          <span id="viewMode">3D ENVIRONMENT</span>
-          <span id="viewStatus">INITIALIZING...</span>
-        </div>
-        <div id="canvasHost"></div>
-        <div class="crosshair" id="crosshair">+</div>
-        <div class="loading" id="loading">INITIALIZING 3D ENGINE...</div>
-        <div class="mobile-hint" id="mobileHint">Arraste a tela para olhar ao redor</div>
+  <div id="hud" class="hud">
+    <div class="score-box" id="scoreLeft">0</div>
+    <div class="score-box" id="scoreRight">0</div>
+  </div>
+
+  <div id="cameraHint" class="camera-hint">Arraste com 2 dedos / Botao direito para mover camera</div>
+
+  <div id="pauseOverlay" class="pause-overlay">
+    <h2>Pausado</h2>
+    <button class="btn btn-green" onclick="resumeGame()">Continuar</button>
+    <button class="btn btn-orange" onclick="openSettingsFromPause()">Configuracoes</button>
+    <button class="btn btn-red" onclick="backToMenu()">Sair para o Menu</button>
+  </div>
+
+  <!-- Lobby -->
+  <div id="lobbyScreen" class="screen active">
+    <h1>PING PONG</h1>
+    <div class="subtitle">Arraste a raquete &bull; Mova a camera</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="startSinglePlayer()">1 Jogador vs Robo</button>
+      <button class="btn btn-secondary" onclick="startMultiPlayer()">2 Jogadores Local</button>
+      <button class="btn btn-purple" onclick="openSettings()">Configuracoes</button>
+    </div>
+    <div class="controls-info">
+      <h3>Como Jogar</h3>
+      <p><strong>Arraste</strong> a raquete com dedo/mouse para se mover</p>
+      <p><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> ou <span class="key">Setas</span> para camera</p>
+      <p><span class="key">Botao direito</span> do mouse e arraste para camera</p>
+      <p><span class="key">2 dedos</span> no mobile para mover camera</p>
+      <p><span class="key">P</span> ou <span class="key">Esc</span> para pausar</p>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div id="settingsScreen" class="screen">
+    <h2>Configuracoes</h2>
+    <div class="settings-panel">
+      <div class="setting-item">
+        <label>Dificuldade do Robo <span class="value-display" id="difficultyValue">Normal</span></label>
+        <select id="difficultySelect" onchange="updateDifficulty()">
+          <option value="easy">Facil</option>
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Dificil</option>
+          <option value="impossible">Impossivel</option>
+        </select>
       </div>
-
-      <div class="toolbar">
-        <button id="buildBtn" class="primary">BUILD ENVIRONMENT</button>
-        <button id="walkBtn">FIRST PERSON</button>
-        <button id="resetBtn">RESET VIEW</button>
-        <button id="arBtn">AR MODE · EXPERIMENTAL</button>
+      <div class="setting-item">
+        <label>Pontuacao Maxima <span class="value-display" id="maxScoreValue">10</span></label>
+        <input type="range" id="maxScore" min="3" max="21" value="10" oninput="updateMaxScore()">
       </div>
-
-      <div class="panel-grid">
-        <section class="panel">
-          <div class="panel-heading">
-            <span class="number">01</span>
-            <div><h2>ENVIRONMENT SCANNER</h2><p>Import one image for each surface.</p></div>
-          </div>
-
-          <div class="photo-grid">
-            <label class="photo-slot">
-              <span class="surface-icon">↑</span>
-              <b>CEILING</b><small id="name-ceiling">Select photo</small>
-              <input type="file" accept="image/*" data-surface="ceiling">
-            </label>
-            <label class="photo-slot">
-              <span class="surface-icon">↓</span>
-              <b>FLOOR</b><small id="name-floor">Select photo</small>
-              <input type="file" accept="image/*" data-surface="floor">
-            </label>
-            <label class="photo-slot">
-              <span class="surface-icon">N</span>
-              <b>FRONT WALL</b><small id="name-front">Select photo</small>
-              <input type="file" accept="image/*" data-surface="front">
-            </label>
-            <label class="photo-slot">
-              <span class="surface-icon">S</span>
-              <b>BACK WALL</b><small id="name-back">Select photo</small>
-              <input type="file" accept="image/*" data-surface="back">
-            </label>
-            <label class="photo-slot">
-              <span class="surface-icon">W</span>
-              <b>LEFT WALL</b><small id="name-left">Select photo</small>
-              <input type="file" accept="image/*" data-surface="left">
-            </label>
-            <label class="photo-slot">
-              <span class="surface-icon">E</span>
-              <b>RIGHT WALL</b><small id="name-right">Select photo</small>
-              <input type="file" accept="image/*" data-surface="right">
-            </label>
-          </div>
-
-          <div class="notice">
-            <span>INFO</span>
-            Photos are used as surface textures. This version does not automatically infer exact room geometry.
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-heading">
-            <span class="number">02</span>
-            <div><h2>DIMENSIONS</h2><p>Set the approximate room size.</p></div>
-          </div>
-
-          <div class="dimension">
-            <label for="roomWidth">WIDTH <span>meters</span></label>
-            <input id="roomWidth" type="number" min="2" max="30" step="0.1" value="4">
-          </div>
-          <div class="dimension">
-            <label for="roomDepth">DEPTH <span>meters</span></label>
-            <input id="roomDepth" type="number" min="2" max="30" step="0.1" value="5">
-          </div>
-          <div class="dimension">
-            <label for="roomHeight">HEIGHT <span>meters</span></label>
-            <input id="roomHeight" type="number" min="2" max="8" step="0.1" value="2.8">
-          </div>
-
-          <button id="applyBtn" class="full-button">APPLY DIMENSIONS</button>
-
-          <div class="divider"></div>
-          <div class="panel-heading compact">
-            <span class="number">03</span>
-            <div><h2>EXPLORATION</h2><p>Movement controls.</p></div>
-          </div>
-          <div class="control-info">
-            <span>W A S D</span><p>Move around</p>
-          </div>
-          <div class="control-info">
-            <span>DRAG</span><p>Look around</p>
-          </div>
-          <div class="control-info">
-            <span>SHIFT</span><p>Move faster</p>
-          </div>
-        </section>
+      <div class="setting-item">
+        <label>Velocidade da Bola <span class="value-display" id="ballSpeedValue">Normal</span></label>
+        <input type="range" id="ballSpeed" min="1" max="5" value="3" oninput="updateBallSpeed()">
       </div>
-    </section>
+      <div class="setting-item">
+        <label>Tamanho da Raquete <span class="value-display" id="paddleSizeValue">Normal</span></label>
+        <input type="range" id="paddleSize" min="1" max="3" value="2" oninput="updatePaddleSize()">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-green back-btn" onclick="backToMenu()">Voltar ao Menu</button>
+      </div>
+    </div>
+  </div>
 
-    <footer>
-      <span>3D SHOOTER © 2026</span>
-      <span>SPATIAL ENGINE / PROTOTYPE 0.1</span>
-    </footer>
-  </main>
+  <!-- Game Over -->
+  <div id="gameOverScreen" class="screen">
+    <h1 id="winnerText">Vencedor!</h1>
+    <div class="subtitle" id="gameOverSubtitle">Placar Final</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="restartGame()">Revanche</button>
+      <button class="btn btn-purple" onclick="backToMenu()">Menu Principal</button>
+    </div>
+  </div>
+</div>
 
-  <div id="toast" role="status"></div>
-  <script type="module" src="./app.js"></script>
+<script>
+/* ============================
+   CONFIGURACOES E ESTADO
+   ============================ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let gameState = 'lobby';
+let gameMode = 'single';
+let animationId;
+
+const settings = {
+  difficulty: 'normal',
+  maxScore: 10,
+  ballSpeed: 3,
+  paddleSize: 2
+};
+
+const difficultyConfig = {
+  easy: { reaction: 0.35, speedFactor: 0.55, errorChance: 0.4, predict: false },
+  normal: { reaction: 0.65, speedFactor: 0.85, errorChance: 0.18, predict: true },
+  hard: { reaction: 0.9, speedFactor: 1.1, errorChance: 0.04, predict: true },
+  impossible: { reaction: 1.0, speedFactor: 1.35, errorChance: 0.0, predict: true }
+};
+
+/* ============================
+   CAMERA E MESA
+   ============================ */
+// Mesa em coordenadas do mundo (proporcao 9:16)
+const TABLE_W = 450;
+const TABLE_H = 800;
+
+let camera = { x: 0, y: 0 };
+let isPanning = false;
+let panStart = { x: 0, y: 0 };
+let cameraStart = { x: 0, y: 0 };
+
+// Limites da camera
+function clampCamera() {
+  const margin = 100;
+  camera.x = Math.max(-margin, Math.min(margin, camera.x));
+  camera.y = Math.max(-margin, Math.min(margin, camera.y));
+}
+
+/* ============================
+   OBJETOS DO JOGO
+   ============================ */
+let paddleLeft, paddleRight, ball, scores;
+
+function initGame() {
+  const paddleW = 70;
+  const paddleH = 18 * (0.7 + settings.paddleSize * 0.3);
+
+  paddleLeft = {
+    x: TABLE_W / 2,
+    y: TABLE_H - 80,
+    width: paddleW,
+    height: paddleH,
+    color: '#FF6B6B',
+    isDragging: false,
+    dragOffsetX: 0,
+    dragOffsetY: 0,
+    trail: []
+  };
+
+  paddleRight = {
+    x: TABLE_W / 2,
+    y: 80,
+    width: paddleW,
+    height: paddleH,
+    color: '#4ECDC4',
+    isDragging: false,
+    dragOffsetX: 0,
+    dragOffsetY: 0,
+    trail: []
+  };
+
+  scores = { left: 0, right: 0 };
+  updateHUD();
+  resetBall();
+}
+
+function resetBall() {
+  const speedMap = [2.5, 3.5, 4.5, 5.5, 7];
+  const baseSpeed = speedMap[settings.ballSpeed - 1] || 4.5;
+  const angle = (Math.random() * Math.PI / 3) - Math.PI / 6;
+  const direction = Math.random() > 0.5 ? 1 : -1;
+
+  ball = {
+    x: TABLE_W / 2,
+    y: TABLE_H / 2,
+    radius: 10,
+    dx: Math.sin(angle) * baseSpeed * 0.5,
+    dy: direction * baseSpeed,
+    trail: [],
+    shadowY: 0,
+    bounceCount: 0,
+    lastBounceSide: null
+  };
+}
+
+/* ============================
+   INPUT - DRAG E CAMERA
+   ============================ */
+const keys = {};
+
+window.addEventListener('keydown', (e) => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
+    if (gameState === 'playing') pauseGame();
+    else if (gameState === 'paused') resumeGame();
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+// Camera com WASD / Setas
+function updateCameraKeys() {
+  const speed = 6;
+  if (keys['w'] || keys['arrowup']) camera.y -= speed;
+  if (keys['s'] || keys['arrowdown']) camera.y += speed;
+  if (keys['a'] || keys['arrowleft']) camera.x -= speed;
+  if (keys['d'] || keys['arrowright']) camera.x += speed;
+  clampCamera();
+}
+
+// === MOUSE ===
+canvas.addEventListener('mousedown', (e) => {
+  if (gameState !== 'playing' && gameState !== 'paused') return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  // Botao direito = pan camera
+  if (e.button === 2) {
+    isPanning = true;
+    panStart = { x: e.clientX, y: e.clientY };
+    cameraStart = { x: camera.x, y: camera.y };
+    e.preventDefault();
+    return;
+  }
+
+  // Botao esquerdo = drag raquete
+  const worldPos = screenToWorld(mx, my);
+  tryGrabPaddle(worldPos.x, worldPos.y);
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (gameState !== 'playing' && gameState !== 'paused') return;
+
+  if (isPanning) {
+    const dx = e.clientX - panStart.x;
+    const dy = e.clientY - panStart.y;
+    camera.x = cameraStart.x - dx * 0.8;
+    camera.y = cameraStart.y - dy * 0.8;
+    clampCamera();
+    return;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  const worldPos = screenToWorld(mx, my);
+
+  moveDraggedPaddle(worldPos.x, worldPos.y);
+});
+
+window.addEventListener('mouseup', () => {
+  isPanning = false;
+  releasePaddles();
+});
+
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// === TOUCH ===
+canvas.addEventListener('touchstart', (e) => {
+  if (gameState !== 'playing' && gameState !== 'paused') return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  if (e.touches.length === 2) {
+    // 2 dedos = pan camera
+    isPanning = true;
+    panStart = {
+      x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+      y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+    };
+    cameraStart = { x: camera.x, y: camera.y };
+    releasePaddles();
+    return;
+  }
+
+  if (e.touches.length === 1) {
+    const mx = (e.touches[0].clientX - rect.left) * scaleX;
+    const my = (e.touches[0].clientY - rect.top) * scaleY;
+    const worldPos = screenToWorld(mx, my);
+    tryGrabPaddle(worldPos.x, worldPos.y);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  if (gameState !== 'playing' && gameState !== 'paused') return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  if (isPanning && e.touches.length === 2) {
+    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    const dx = cx - panStart.x;
+    const dy = cy - panStart.y;
+    camera.x = cameraStart.x - dx * 0.8;
+    camera.y = cameraStart.y - dy * 0.8;
+    clampCamera();
+    return;
+  }
+
+  if (e.touches.length === 1) {
+    const mx = (e.touches[0].clientX - rect.left) * scaleX;
+    const my = (e.touches[0].clientY - rect.top) * scaleY;
+    const worldPos = screenToWorld(mx, my);
+    moveDraggedPaddle(worldPos.x, worldPos.y);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  if (e.touches.length < 2) isPanning = false;
+  if (e.touches.length === 0) releasePaddles();
+});
+
+// === DRAG LOGIC ===
+function tryGrabPaddle(wx, wy) {
+  // Jogador esquerdo (baixo) - sempre pode pegar
+  if (pointInPaddle(wx, wy, paddleLeft)) {
+    paddleLeft.isDragging = true;
+    paddleLeft.dragOffsetX = wx - paddleLeft.x;
+    paddleLeft.dragOffsetY = wy - paddleLeft.y;
+    return;
+  }
+
+  // Jogador direito (cima) - so no modo multiplayer
+  if (gameMode === 'multi' && pointInPaddle(wx, wy, paddleRight)) {
+    paddleRight.isDragging = true;
+    paddleRight.dragOffsetX = wx - paddleRight.x;
+    paddleRight.dragOffsetY = wy - paddleRight.y;
+  }
+}
+
+function moveDraggedPaddle(wx, wy) {
+  if (paddleLeft.isDragging) {
+    paddleLeft.x = wx - paddleLeft.dragOffsetX;
+    paddleLeft.y = wy - paddleLeft.dragOffsetY;
+    clampPaddle(paddleLeft, TABLE_H / 2, TABLE_H - 20);
+  }
+  if (paddleRight.isDragging) {
+    paddleRight.x = wx - paddleRight.dragOffsetX;
+    paddleRight.y = wy - paddleRight.dragOffsetY;
+    clampPaddle(paddleRight, 20, TABLE_H / 2);
+  }
+}
+
+function releasePaddles() {
+  paddleLeft.isDragging = false;
+  paddleRight.isDragging = false;
+}
+
+function pointInPaddle(px, py, paddle) {
+  return px >= paddle.x - paddle.width / 2 - 15 &&
+         px <= paddle.x + paddle.width / 2 + 15 &&
+         py >= paddle.y - paddle.height / 2 - 15 &&
+         py <= paddle.y + paddle.height / 2 + 15;
+}
+
+function clampPaddle(p, minY, maxY) {
+  const halfW = p.width / 2;
+  p.x = Math.max(halfW + 10, Math.min(TABLE_W - halfW - 10, p.x));
+  p.y = Math.max(minY, Math.min(maxY, p.y));
+}
+
+/* ============================
+   COORDENADAS
+   ============================ */
+function screenToWorld(sx, sy) {
+  const cx = canvas.width / 2 + camera.x;
+  const cy = canvas.height / 2 + camera.y;
+  const scale = getScale();
+  return {
+    x: (sx - cx) / scale + TABLE_W / 2,
+    y: (sy - cy) / scale + TABLE_H / 2
+  };
+}
+
+function worldToScreen(wx, wy) {
+  const cx = canvas.width / 2 + camera.x;
+  const cy = canvas.height / 2 + camera.y;
+  const scale = getScale();
+  return {
+    x: (wx - TABLE_W / 2) * scale + cx,
+    y: (wy - TABLE_H / 2) * scale + cy
+  };
+}
+
+function getScale() {
+  // Escala para caber a mesa no canvas 9:16
+  const scaleX = canvas.width / TABLE_W;
+  const scaleY = canvas.height / TABLE_H;
+  return Math.min(scaleX, scaleY) * 0.92;
+}
+
+/* ============================
+   TELAS
+   ============================ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) document.getElementById(id).classList.add('active');
+}
+
+function openSettings() {
+  gameState = 'settings';
+  showScreen('settingsScreen');
+}
+
+function openSettingsFromPause() {
+  gameState = 'settings';
+  document.getElementById('pauseOverlay').classList.remove('active');
+  showScreen('settingsScreen');
+}
+
+function backToMenu() {
+  gameState = 'lobby';
+  stopLoop();
+  document.getElementById('hud').classList.remove('active');
+  document.getElementById('cameraHint').classList.remove('active');
+  document.getElementById('pauseOverlay').classList.remove('active');
+  showScreen('lobbyScreen');
+  resizeCanvas();
+}
+
+function startSinglePlayer() {
+  gameMode = 'single';
+  startGame();
+}
+
+function startMultiPlayer() {
+  gameMode = 'multi';
+  startGame();
+}
+
+function startGame() {
+  gameState = 'playing';
+  showScreen(null);
+  document.getElementById('hud').classList.add('active');
+  document.getElementById('cameraHint').classList.add('active');
+  setTimeout(() => {
+    document.getElementById('cameraHint').classList.remove('active');
+  }, 4000);
+  resizeCanvas();
+  camera = { x: 0, y: 0 };
+  initGame();
+  startLoop();
+}
+
+function pauseGame() {
+  if (gameState !== 'playing') return;
+  gameState = 'paused';
+  document.getElementById('pauseOverlay').classList.add('active');
+}
+
+function resumeGame() {
+  if (gameState !== 'paused') return;
+  gameState = 'playing';
+  document.getElementById('pauseOverlay').classList.remove('active');
+}
+
+function restartGame() {
+  showScreen(null);
+  document.getElementById('hud').classList.add('active');
+  gameState = 'playing';
+  camera = { x: 0, y: 0 };
+  initGame();
+}
+
+function gameOver(winner) {
+  gameState = 'gameover';
+  stopLoop();
+  const winnerText = document.getElementById('winnerText');
+  const subtitle = document.getElementById('gameOverSubtitle');
+
+  if (gameMode === 'single') {
+    winnerText.textContent = winner === 'left' ? 'Voce Venceu!' : 'Robo Venceu!';
+    winnerText.style.color = winner === 'left' ? '#95E1D3' : '#FF6B6B';
+  } else {
+    winnerText.textContent = winner === 'left' ? 'Jogador 1 Venceu!' : 'Jogador 2 Venceu!';
+    winnerText.style.color = winner === 'left' ? '#FF6B6B' : '#4ECDC4';
+  }
+  subtitle.textContent = `Placar Final: ${scores.left} x ${scores.right}`;
+  showScreen('gameOverScreen');
+}
+
+/* ============================
+   CONFIGURACOES
+   ============================ */
+function updateDifficulty() {
+  const val = document.getElementById('difficultySelect').value;
+  settings.difficulty = val;
+  const labels = { easy: 'Facil', normal: 'Normal', hard: 'Dificil', impossible: 'Impossivel' };
+  document.getElementById('difficultyValue').textContent = labels[val];
+}
+
+function updateMaxScore() {
+  const val = parseInt(document.getElementById('maxScore').value);
+  settings.maxScore = val;
+  document.getElementById('maxScoreValue').textContent = val;
+}
+
+function updateBallSpeed() {
+  const val = parseInt(document.getElementById('ballSpeed').value);
+  settings.ballSpeed = val;
+  const labels = { 1: 'Muito Lenta', 2: 'Lenta', 3: 'Normal', 4: 'Rapida', 5: 'Extrema' };
+  document.getElementById('ballSpeedValue').textContent = labels[val];
+}
+
+function updatePaddleSize() {
+  const val = parseInt(document.getElementById('paddleSize').value);
+  settings.paddleSize = val;
+  const labels = { 1: 'Pequena', 2: 'Normal', 3: 'Grande' };
+  document.getElementById('paddleSizeValue').textContent = labels[val];
+}
+
+/* ============================
+   FISICA E IA
+   ============================ */
+function updateAI() {
+  if (gameMode !== 'single') return;
+  const cfg = difficultyConfig[settings.difficulty];
+  const paddle = paddleRight;
+
+  // So reage se a bola estiver vindo para o robo
+  if (ball.dy > 0) return;
+
+  const targetX = ball.x;
+  const targetY = ball.y - 60;
+  let diffX = targetX - paddle.x;
+  let diffY = targetY - paddle.y;
+
+  if (cfg.errorChance > 0 && Math.random() < cfg.errorChance) {
+    diffX += (Math.random() - 0.5) * 120;
+    diffY += (Math.random() - 0.5) * 60;
+  }
+
+  const speed = 4 * cfg.speedFactor;
+
+  if (Math.random() > (1 - cfg.reaction)) {
+    if (Math.abs(diffX) > speed) paddle.x += Math.sign(diffX) * speed;
+    else paddle.x += diffX * 0.3;
+
+    if (Math.abs(diffY) > speed) paddle.y += Math.sign(diffY) * speed;
+    else paddle.y += diffY * 0.3;
+  }
+
+  if (cfg.predict && ball.dy < 0) {
+    const timeToReach = (paddle.y - ball.y) / Math.abs(ball.dy);
+    const predictedX = ball.x + ball.dx * timeToReach;
+    const predictDiff = predictedX - paddle.x;
+    if (Math.abs(predictDiff) > 5) {
+      paddle.x += Math.sign(predictDiff) * speed * 0.25;
+    }
+  }
+
+  clampPaddle(paddle, 20, TABLE_H / 2);
+}
+
+function updateBall() {
+  ball.trail.push({ x: ball.x, y: ball.y });
+  if (ball.trail.length > 12) ball.trail.shift();
+
+  ball.x += ball.dx;
+  ball.y += ball.dy;
+
+  // Sombra da bola (altura simulada)
+  ball.shadowY += (ball.y - ball.shadowY) * 0.3;
+
+  // Colisao com paredes laterais da mesa
+  if (ball.x - ball.radius < 10) {
+    ball.x = 10 + ball.radius;
+    ball.dx = Math.abs(ball.dx);
+  }
+  if (ball.x + ball.radius > TABLE_W - 10) {
+    ball.x = TABLE_W - 10 - ball.radius;
+    ball.dx = -Math.abs(ball.dx);
+  }
+
+  // Colisao com raquete esquerda (jogador de baixo)
+  if (checkPaddleHit(ball, paddleLeft)) {
+    ball.dy = -Math.abs(ball.dy) * 1.03;
+    const hitPoint = (ball.x - paddleLeft.x) / (paddleLeft.width / 2);
+    ball.dx = hitPoint * 4;
+    ball.lastBounceSide = 'left';
+    ball.bounceCount++;
+  }
+
+  // Colisao com raquete direita (jogador de cima / robo)
+  if (checkPaddleHit(ball, paddleRight)) {
+    ball.dy = Math.abs(ball.dy) * 1.03;
+    const hitPoint = (ball.x - paddleRight.x) / (paddleRight.width / 2);
+    ball.dx = hitPoint * 4;
+    ball.lastBounceSide = 'right';
+    ball.bounceCount++;
+  }
+
+  // Pontuacao
+  if (ball.y > TABLE_H + 30) {
+    scores.right++;
+    checkWin();
+    updateHUD();
+    resetBall();
+  }
+  if (ball.y < -30) {
+    scores.left++;
+    checkWin();
+    updateHUD();
+    resetBall();
+  }
+}
+
+function checkPaddleHit(b, p) {
+  const halfW = p.width / 2 + b.radius;
+  const halfH = p.height / 2 + b.radius;
+  return b.x > p.x - halfW && b.x < p.x + halfW &&
+         b.y > p.y - halfH && b.y < p.y + halfH;
+}
+
+function checkWin() {
+  if (scores.left >= settings.maxScore) gameOver('left');
+  else if (scores.right >= settings.maxScore) gameOver('right');
+}
+
+function updateHUD() {
+  document.getElementById('scoreLeft').textContent = scores.left;
+  document.getElementById('scoreRight').textContent = scores.right;
+}
+
+/* ============================
+   DESENHO - MESA AZUL CLASSICA
+   ============================ */
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const scale = getScale();
+  const cx = canvas.width / 2 + camera.x;
+  const cy = canvas.height / 2 + camera.y;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+  ctx.translate(-TABLE_W / 2, -TABLE_H / 2);
+
+  drawTable();
+  drawNet();
+  drawBall();
+  drawPaddle(paddleLeft);
+  drawPaddle(paddleRight);
+
+  ctx.restore();
+
+  if (gameState === 'paused') {
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+function drawTable() {
+  // Borda da mesa (madeira)
+  ctx.fillStyle = '#8B4513';
+  roundRect(-8, -8, TABLE_W + 16, TABLE_H + 16, 12);
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Superficie azul
+  ctx.fillStyle = '#2E5C8A';
+  roundRect(0, 0, TABLE_W, TABLE_H, 8);
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Linha de fundo (jogador de baixo)
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(0, TABLE_H - 60);
+  ctx.lineTo(TABLE_W, TABLE_H - 60);
+  ctx.stroke();
+
+  // Linha de fundo (jogador de cima)
+  ctx.beginPath();
+  ctx.moveTo(0, 60);
+  ctx.lineTo(TABLE_W, 60);
+  ctx.stroke();
+
+  // Linhas laterais
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, TABLE_H);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(TABLE_W, 0);
+  ctx.lineTo(TABLE_W, TABLE_H);
+  ctx.stroke();
+
+  // Linha central
+  ctx.setLineDash([10, 8]);
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, TABLE_H / 2);
+  ctx.lineTo(TABLE_W, TABLE_H / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Linha central vertical (divisao de lados)
+  ctx.beginPath();
+  ctx.moveTo(TABLE_W / 2, 60);
+  ctx.lineTo(TABLE_W / 2, TABLE_H - 60);
+  ctx.stroke();
+
+  // Sombra da mesa
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  roundRect(15, TABLE_H + 5, TABLE_W - 30, 20, 5);
+  ctx.fill();
+
+  // Pes da mesa
+  drawTableLeg(TABLE_W * 0.15, TABLE_H);
+  drawTableLeg(TABLE_W * 0.85, TABLE_H);
+  drawTableLeg(TABLE_W * 0.15, 0);
+  drawTableLeg(TABLE_W * 0.85, 0);
+}
+
+function drawTableLeg(x, y) {
+  ctx.fillStyle = '#555';
+  ctx.fillRect(x - 8, y, 16, 50);
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x - 8, y, 16, 50);
+
+  // Rodinha
+  ctx.fillStyle = '#333';
+  ctx.beginPath();
+  ctx.arc(x, y + 55, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function drawNet() {
+  const netY = TABLE_H / 2;
+  const postH = 25;
+
+  // Postes
+  ctx.fillStyle = '#333';
+  ctx.fillRect(2, netY - postH / 2, 8, postH);
+  ctx.fillRect(TABLE_W - 10, netY - postH / 2, 8, postH);
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(2, netY - postH / 2, 8, postH);
+  ctx.strokeRect(TABLE_W - 10, netY - postH / 2, 8, postH);
+
+  // Tecido da rede
+  ctx.strokeStyle = '#FF6B6B';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(6, netY - postH / 2 + 2);
+  ctx.lineTo(TABLE_W - 6, netY - postH / 2 + 2);
+  ctx.stroke();
+
+  // Grade da rede
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 0.8;
+  for (let i = 10; i < TABLE_W - 10; i += 10) {
+    ctx.beginPath();
+    ctx.moveTo(i, netY - postH / 2 + 3);
+    ctx.lineTo(i, netY + postH / 2 - 3);
+    ctx.stroke();
+  }
+  for (let j = netY - postH / 2 + 5; j < netY + postH / 2 - 3; j += 6) {
+    ctx.beginPath();
+    ctx.moveTo(6, j);
+    ctx.lineTo(TABLE_W - 6, j);
+    ctx.stroke();
+  }
+
+  // Borda branca da rede
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(6, netY + postH / 2 - 2);
+  ctx.lineTo(TABLE_W - 6, netY + postH / 2 - 2);
+  ctx.stroke();
+}
+
+function drawPaddle(paddle) {
+  const x = paddle.x - paddle.width / 2;
+  const y = paddle.y - paddle.height / 2;
+  const w = paddle.width;
+  const h = paddle.height;
+  const r = 6;
+
+  // Cabo da raquete
+  ctx.fillStyle = '#8B4513';
+  const handleLen = 35;
+  const handleW = 10;
+  if (paddle.y > TABLE_H / 2) {
+    // Jogador de baixo - cabo para baixo
+    ctx.fillRect(paddle.x - handleW / 2, paddle.y + h / 2, handleW, handleLen);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(paddle.x - handleW / 2, paddle.y + h / 2, handleW, handleLen);
+  } else {
+    // Jogador de cima - cabo para cima
+    ctx.fillRect(paddle.x - handleW / 2, paddle.y - h / 2 - handleLen, handleW, handleLen);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(paddle.x - handleW / 2, paddle.y - h / 2 - handleLen, handleW, handleLen);
+  }
+
+  // Sombra da raquete
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  roundRect(x + 3, y + 3, w, h, r);
+  ctx.fill();
+
+  // Corpo da raquete
+  ctx.fillStyle = paddle.color;
+  roundRect(x, y, w, h, r);
+  ctx.fill();
+
+  // Contorno preto grosso
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 3;
+  roundRect(x, y, w, h, r);
+  ctx.stroke();
+
+  // Borracha da raquete (borda mais escura)
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.lineWidth = 2;
+  roundRect(x + 3, y + 3, w - 6, h - 6, r - 2);
+  ctx.stroke();
+
+  // Brilho
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  roundRect(x + 4, y + 4, w - 8, h / 3, r / 2);
+  ctx.fill();
+
+  // Indicador de drag ativo
+  if (paddle.isDragging) {
+    ctx.strokeStyle = '#FFE66D';
+    ctx.lineWidth = 3;
+    roundRect(x - 4, y - 4, w + 8, h + 8, r + 4);
+    ctx.stroke();
+  }
+}
+
+function drawBall() {
+  // Sombra da bola na mesa
+  const shadowOffset = 4;
+  ctx.beginPath();
+  ctx.ellipse(ball.x + shadowOffset, ball.y + shadowOffset, ball.radius * 0.9, ball.radius * 0.5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fill();
+
+  // Rastro
+  ball.trail.forEach((pos, i) => {
+    const alpha = (i + 1) / ball.trail.length * 0.35;
+    const size = ball.radius * (i + 1) / ball.trail.length;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 230, 109, ${alpha})`;
+    ctx.fill();
+  });
+
+  // Bola
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+  ctx.fillStyle = '#FFE66D';
+  ctx.fill();
+
+  // Contorno preto
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Brilho
+  ctx.beginPath();
+  ctx.arc(ball.x - ball.radius * 0.3, ball.y - ball.radius * 0.3, ball.radius * 0.35, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fill();
+
+  // Linha de rotacao
+  ctx.save();
+  ctx.translate(ball.x, ball.y);
+  ctx.rotate(ball.x * 0.15 + ball.y * 0.1);
+  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-ball.radius * 0.5, 0);
+  ctx.lineTo(ball.radius * 0.5, 0);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+/* ============================
+   GAME LOOP
+   ============================ */
+function gameLoop() {
+  if (gameState !== 'playing' && gameState !== 'paused') return;
+
+  if (gameState === 'playing') {
+    updateCameraKeys();
+    updateAI();
+    updateBall();
+  }
+
+  draw();
+  animationId = requestAnimationFrame(gameLoop);
+}
+
+function startLoop() {
+  animationId = requestAnimationFrame(gameLoop);
+}
+
+function stopLoop() {
+  if (animationId) cancelAnimationFrame(animationId);
+}
+
+/* ============================
+   REDIMENSIONAMENTO
+   ============================ */
+function resizeCanvas() {
+  const container = document.getElementById('game-container');
+  const aspect = 9 / 16;
+  let w = container.clientWidth * 0.96;
+  let h = w / aspect;
+
+  if (h > container.clientHeight * 0.96) {
+    h = container.clientHeight * 0.96;
+    w = h * aspect;
+  }
+
+  canvas.width = 450;
+  canvas.height = 800;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Inicializa configuracoes
+updateDifficulty();
+updateMaxScore();
+updateBallSpeed();
+updatePaddleSize();
+</script>
 </body>
 </html>
