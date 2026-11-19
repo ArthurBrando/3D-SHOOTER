@@ -3,261 +3,139 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PS5 Emulator</title>
+<title>PS5 Emulator - Classic Layout</title>
 <style>
   /* ========== BASE ========== */
-  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body{ height:100%; overflow:hidden; }
-  body{
-    font-family:"Segoe UI", system-ui, -apple-system, sans-serif;
-    color:#fff;
-    background:#000;
-    user-select:none;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: #000; font-family: "Segoe UI", system-ui, sans-serif; color: #fff; user-select: none; }
 
   /* ========== FUNDO ========== */
-  #bg{
-    position:fixed; inset:0; z-index:0;
-    background:url("background.png") center center / cover no-repeat;
-    animation:kenburns 32s ease-in-out infinite alternate;
+  #bg {
+    position: fixed; inset: 0; z-index: 0;
+    background: url("background.png") center center / cover no-repeat;
+    animation: kenburns 32s ease-in-out infinite alternate;
   }
-  @keyframes kenburns{
-    from{ transform:scale(1); }
-    to  { transform:scale(1.08); }
-  }
-
-  /* ========== TELA DE BOOT (PLAY) ========== */
-  #boot{
-    position:fixed; inset:0; z-index:30;
-    display:grid; place-items:center;
-    background:radial-gradient(circle at 50% 50%,
-                rgba(0,0,0,.20) 0%,
-                rgba(0,0,0,.55) 70%,
-                rgba(0,0,0,.75) 100%);
-    transition:opacity .9s ease, visibility .9s ease;
-  }
-  #boot.hide{ opacity:0; visibility:hidden; }
-
-  .play{
-    position:relative;
-    width:clamp(96px, 15vmin, 140px);
-    aspect-ratio:1/1;
-    border-radius:50%;
-    border:2px solid #fff;
-    background:rgba(255,255,255,.05);
-    backdrop-filter:blur(8px);
-    -webkit-backdrop-filter:blur(8px);
-    display:grid; place-items:center;
-    cursor:pointer;
-    animation:glow 2.6s ease-in-out infinite;
-    transition:transform .3s ease, background .3s ease;
-  }
-  .play:hover{ transform:scale(1.08); background:rgba(255,255,255,.18); }
-  .play:active{ transform:scale(.95); }
-  .play svg{ width:40%; height:40%; fill:#fff; margin-left:9%; }
-
-  .play::after{
-    content:"";
-    position:absolute; inset:-2px;
-    border-radius:50%;
-    border:2px solid rgba(255,255,255,.55);
-    animation:ripple 2.6s ease-out infinite;
-    pointer-events:none;
-  }
-  @keyframes ripple{
-    0%  { transform:scale(1);   opacity:.8; }
-    100%{ transform:scale(1.6); opacity:0;  }
-  }
-  @keyframes glow{
-    0%,100%{ box-shadow:0 0 0 0 rgba(255,255,255,.35), 0 0 40px rgba(255,255,255,.15); }
-    50%    { box-shadow:0 0 0 18px rgba(255,255,255,0), 0 0 70px rgba(255,255,255,.35); }
+  @keyframes kenburns {
+    from { transform: scale(1); }
+    to   { transform: scale(1.05); }
   }
 
-  /* ========== INTERFACE DO EMULADOR ========== */
-  #ui{
-    position:fixed; inset:0; z-index:10;
-    display:flex; flex-direction:column;
-    opacity:0; transform:scale(1.03);
-    pointer-events:none;
-    transition:opacity 1s ease, transform 1.2s ease;
-    background:linear-gradient(180deg,
-                rgba(0,0,0,.60) 0%,
-                rgba(0,0,0,.10) 35%,
-                rgba(0,0,0,.10) 60%,
-                rgba(0,0,0,.75) 100%);
+  /* ========== TELA INICIAL (START) ========== */
+  #boot {
+    position: fixed; inset: 0; z-index: 30;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+    background: rgba(0, 0, 0, 0.4);
+    transition: opacity 1s ease, visibility 1s ease;
   }
-  #ui.show{ opacity:1; transform:scale(1); pointer-events:auto; }
+  #boot.hide { opacity: 0; visibility: hidden; }
 
-  /* --- Barra superior --- */
-  .topbar{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:24px 36px;
-    opacity:0; transform:translateY(-14px);
-    transition:opacity .8s ease, transform .8s ease;
+  .start-container {
+    display: flex; flex-direction: column; align-items: center; cursor: pointer;
+    animation: pulse 2s infinite alternate;
   }
-  #ui.show .topbar{ opacity:1; transform:none; transition-delay:.15s; }
+  .start-container:hover { transform: scale(1.1); transition: transform 0.2s; }
+  
+  .play-triangle { width: 80px; height: 80px; fill: #fff; filter: drop-shadow(0 0 15px rgba(255,255,255,0.5)); }
+  .start-text { font-size: 24px; font-weight: 600; letter-spacing: 0.5em; text-indent: 0.5em; margin-top: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
 
-  .user{ display:flex; align-items:center; gap:14px; }
-  .avatar{
-    width:44px; height:44px; border-radius:50%;
-    border:2px solid #fff;
-    background:rgba(255,255,255,.06);
-    backdrop-filter:blur(6px);
-    display:grid; place-items:center;
-    font-size:13px; font-weight:600; letter-spacing:.05em;
-  }
-  .user .name{ font-size:14px; font-weight:600; letter-spacing:.04em; }
-  .user .status{
-    display:flex; align-items:center; gap:6px;
-    font-size:11px; letter-spacing:.12em; text-transform:uppercase;
-    color:rgba(255,255,255,.65);
-  }
-  .dot{
-    width:6px; height:6px; border-radius:50%;
-    background:#fff; box-shadow:0 0 8px #fff;
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.05); opacity: 1; }
   }
 
-  .topright{ display:flex; align-items:center; gap:18px; }
-  .clock{
-    font-size:14px; letter-spacing:.10em;
-    color:rgba(255,255,255,.9);
+  /* ========== INTERFACE DO EMULADOR (CONTROLES) ========== */
+  #ui {
+    position: fixed; inset: 0; z-index: 10;
+    opacity: 0; pointer-events: none;
+    transition: opacity 1s ease;
   }
-  .iconbtn{
-    width:40px; height:40px; border-radius:50%;
-    border:2px solid rgba(255,255,255,.85);
-    background:transparent;
-    display:grid; place-items:center;
-    cursor:pointer;
-    transition:background .25s ease, transform .25s ease;
-  }
-  .iconbtn:hover{ background:rgba(255,255,255,.18); transform:scale(1.08); }
-  .iconbtn svg{
-    width:18px; height:18px;
-    fill:none; stroke:#fff; stroke-width:2;
-    stroke-linecap:round; stroke-linejoin:round;
+  #ui.show { opacity: 1; pointer-events: auto; }
+
+  /* Todos os elementos de controle */
+  .ctrl-element {
+    position: absolute;
+    border: 2px solid #fff;
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
   }
 
-  /* --- Palco central --- */
-  .stage{
-    flex:1;
-    display:flex; flex-direction:column;
-    align-items:center; justify-content:center;
-    padding:0 32px;
-    text-align:center;
-    opacity:0; transform:translateY(20px);
-    transition:opacity .9s ease, transform .9s ease;
+  /* L e R (Ombros) */
+  .shoulder {
+    width: 120px; height: 40px;
+    border-radius: 0 0 20px 20px;
+    font-size: 14px; font-weight: 600; letter-spacing: 2px;
   }
-  #ui.show .stage{ opacity:1; transform:none; transition-delay:.35s; }
+  .shoulder.left { top: 20px; left: 40px; border-top: none; transform: skewX(-15deg); }
+  .shoulder.right { top: 20px; right: 40px; border-top: none; transform: skewX(15deg); }
 
-  .ps-logo{
-    font-size:clamp(46px, 9vw, 92px);
-    font-weight:200;
-    letter-spacing:.22em;
-    line-height:1;
-    text-indent:.22em;
-    text-shadow:0 0 40px rgba(255,255,255,.35);
+  /* Direcional (D-Pad) */
+  .d-pad {
+    top: 50%; left: 8%; transform: translateY(-50%);
+    width: 130px; height: 130px;
+    border: none; box-shadow: none; background: transparent;
   }
-  .ps-title{
-    margin-top:14px;
-    font-size:clamp(14px, 2vw, 18px);
-    font-weight:400;
-    letter-spacing:.42em;
-    text-transform:uppercase;
-    text-indent:.42em;
-    color:rgba(255,255,255,.9);
+  .d-pad-btn {
+    position: absolute; width: 40px; height: 40px;
+    border: 2px solid #fff; background: transparent;
+    display: flex; align-items: center; justify-content: center;
   }
-  .ps-sub{
-    margin-top:10px;
-    font-size:12px;
-    letter-spacing:.22em;
-    text-transform:uppercase;
-    color:rgba(255,255,255,.5);
-  }
+  .d-pad-btn svg { width: 16px; height: 16px; fill: #fff; }
+  .d-up { top: 0; left: 45px; border-radius: 8px 8px 0 0; border-bottom: none; }
+  .d-down { bottom: 0; left: 45px; border-radius: 0 0 8px 8px; border-top: none; }
+  .d-left { top: 45px; left: 0; border-radius: 8px 0 0 8px; border-right: none; }
+  .d-right { top: 45px; right: 0; border-radius: 0 8px 8px 0; border-left: none; }
+  .d-center { top: 45px; left: 45px; width: 40px; height: 40px; border: none; background: transparent; }
 
-  /* --- Tiles (cards vazados) --- */
-  .tiles{
-    display:flex; flex-wrap:wrap; gap:16px;
-    justify-content:center;
-    margin-top:44px;
+  /* Botões de Ação (Triângulo, Círculo, X, Quadrado) */
+  .actions {
+    top: 50%; right: 8%; transform: translateY(-50%);
+    width: 140px; height: 140px; position: relative;
   }
-  .tile{
-    width:150px; height:92px;
-    border:2px solid rgba(255,255,255,.75);
-    border-radius:14px;
-    background:rgba(255,255,255,.04);
-    backdrop-filter:blur(6px);
-    -webkit-backdrop-filter:blur(6px);
-    display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:9px;
-    cursor:pointer;
-    transition:background .3s ease, transform .3s ease, border-color .3s ease;
+  .action-btn {
+    position: absolute; width: 44px; height: 44px; border-radius: 50%;
+    border: 2px solid #fff; background: transparent;
+    display: flex; align-items: center; justify-content: center;
   }
-  .tile:hover{
-    background:rgba(255,255,255,.16);
-    border-color:#fff;
-    transform:translateY(-6px);
+  .action-btn svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; }
+  .btn-triangle { top: 0; left: 48px; }
+  .btn-circle { top: 48px; right: 0; }
+  .btn-cross { bottom: 0; left: 48px; }
+  .btn-square { top: 48px; left: 0; }
+
+  /* Analógico Esquerdo */
+  .analog {
+    bottom: 50px; left: 8%;
+    width: 110px; height: 110px; border-radius: 50%;
+    border: 3px solid #fff; background: transparent;
+    position: absolute;
   }
-  .tile svg{
-    width:24px; height:24px;
-    fill:none; stroke:#fff; stroke-width:1.8;
-    stroke-linecap:round; stroke-linejoin:round;
-  }
-  .tile span{
-    font-size:10.5px;
-    letter-spacing:.16em;
-    text-transform:uppercase;
-    color:rgba(255,255,255,.85);
+  .analog-inner {
+    width: 70px; height: 70px; border-radius: 50%;
+    border: 2px dashed rgba(255,255,255,0.5);
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
   }
 
-  /* --- Barra de controles (vazados) --- */
-  .controls{
-    display:flex; flex-wrap:wrap; gap:34px;
-    justify-content:center; align-items:center;
-    padding:0 32px 40px;
-    opacity:0; transform:translateY(20px);
-    transition:opacity .9s ease, transform .9s ease;
+  /* Botões Inferiores (Play, Select, Start) */
+  .bottom-bar {
+    position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 20px;
   }
-  #ui.show .controls{ opacity:1; transform:none; transition-delay:.6s; }
+  .bottom-btn {
+    padding: 8px 16px; border: 2px solid #fff; border-radius: 4px;
+    background: transparent; font-size: 12px; font-weight: 600;
+    letter-spacing: 2px; display: flex; align-items: center; gap: 8px;
+  }
+  .bottom-btn svg { width: 14px; height: 14px; fill: #fff; }
+  .btn-play-icon { border-radius: 50%; width: 36px; height: 36px; padding: 0; justify-content: center; }
 
-  .ctrl{
-    display:flex; align-items:center; gap:12px;
-    cursor:pointer;
-  }
-  .btn{
-    width:46px; height:46px; border-radius:50%;
-    border:2px solid rgba(255,255,255,.9);
-    background:transparent;
-    display:grid; place-items:center;
-    transition:background .25s ease, transform .25s ease, box-shadow .25s ease;
-  }
-  .btn svg{
-    width:22px; height:22px;
-    fill:none; stroke:#fff; stroke-width:2;
-    stroke-linecap:round; stroke-linejoin:round;
-  }
-  .ctrl:hover .btn{
-    background:rgba(255,255,255,.18);
-    transform:scale(1.12);
-    box-shadow:0 0 22px rgba(255,255,255,.35);
-  }
-  .ctrl .lbl{
-    font-size:11px;
-    letter-spacing:.16em;
-    text-transform:uppercase;
-    color:rgba(255,255,255,.8);
-  }
-
-  /* ========== RESPONSIVO ========== */
-  @media (max-width:640px){
-    .topbar{ padding:18px 20px; }
-    .user .name, .user .status{ display:none; }
-    .clock{ font-size:12px; }
-    .tiles{ gap:12px; margin-top:30px; }
-    .tile{ width:118px; height:80px; }
-    .controls{ gap:20px; padding-bottom:28px; }
-    .btn{ width:40px; height:40px; }
-    .btn svg{ width:18px; height:18px; }
-    .ctrl .lbl{ display:none; }
+  /* Responsividade para telas menores */
+  @media (max-width: 800px) {
+    .shoulder { width: 80px; height: 30px; font-size: 10px; }
+    .d-pad { transform: translateY(-50%) scale(0.7); left: 2%; }
+    .actions { transform: translateY(-50%) scale(0.7); right: 2%; }
+    .analog { transform: scale(0.7); bottom: 20px; left: 2%; }
+    .bottom-bar { transform: translateX(-50%) scale(0.8); bottom: 20px; }
   }
 </style>
 </head>
@@ -266,123 +144,90 @@
   <!-- Fundo -->
   <div id="bg"></div>
 
-  <!-- Tela inicial com o botão de play -->
+  <!-- Tela Inicial -->
   <div id="boot">
-    <button class="play" id="playBtn" aria-label="Iniciar">
-      <svg viewBox="0 0 24 24"><path d="M8 5.2v13.6L19 12z"/></svg>
-    </button>
+    <div class="start-container" id="playBtn">
+      <!-- Triângulo de Play -->
+      <svg class="play-triangle" viewBox="0 0 24 24">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+      <div class="start-text">START</div>
+    </div>
   </div>
 
-  <!-- Interface do emulador -->
+  <!-- Interface do Emulador -->
   <div id="ui">
+    
+    <!-- Ombros L e R -->
+    <div class="ctrl-element shoulder left">L</div>
+    <div class="ctrl-element shoulder right">R</div>
 
-    <!-- Barra superior -->
-    <header class="topbar">
-      <div class="user">
-        <div class="avatar">P1</div>
-        <div>
-          <div class="name">Player_01</div>
-          <div class="status"><span class="dot"></span>Online</div>
-        </div>
+    <!-- Direcional (D-Pad) -->
+    <div class="d-pad">
+      <div class="d-pad-btn d-up"><svg viewBox="0 0 24 24"><path d="M12 4l8 12H4z"/></svg></div>
+      <div class="d-pad-btn d-down"><svg viewBox="0 0 24 24"><path d="M12 20L4 8h16z"/></svg></div>
+      <div class="d-pad-btn d-left"><svg viewBox="0 0 24 24"><path d="M4 12l12-8v16z"/></svg></div>
+      <div class="d-pad-btn d-right"><svg viewBox="0 0 24 24"><path d="M20 12L8 20V4z"/></svg></div>
+      <div class="d-center"></div>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="actions">
+      <!-- Triângulo -->
+      <div class="action-btn btn-triangle">
+        <svg viewBox="0 0 24 24"><path d="M12 4l8 14H4z"/></svg>
       </div>
-
-      <div class="topright">
-        <span class="clock" id="clock">00:00</span>
-
-        <button class="iconbtn" aria-label="Buscar">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.6-4.6"/></svg>
-        </button>
-
-        <button class="iconbtn" aria-label="Configurações">
-          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.1"/><circle cx="15" cy="12" r="2.1"/><circle cx="8" cy="17" r="2.1"/></svg>
-        </button>
-
-        <button class="iconbtn" aria-label="Desligar">
-          <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.6 6.6a8 8 0 1 0 10.8 0"/></svg>
-        </button>
+      <!-- Círculo -->
+      <div class="action-btn btn-circle">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
       </div>
-    </header>
+      <!-- X (Cruz) -->
+      <div class="action-btn btn-cross">
+        <svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>
+      </div>
+      <!-- Quadrado -->
+      <div class="action-btn btn-square">
+        <svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14"/></svg>
+      </div>
+    </div>
 
-    <!-- Conteúdo central -->
-    <main class="stage">
-      <div class="ps-logo">PS5</div>
-      <div class="ps-title">PlayStation®5</div>
-      <div class="ps-sub">Emulador · Demonstração</div>
+    <!-- Analógico Esquerdo -->
+    <div class="analog">
+      <div class="analog-inner"></div>
+    </div>
 
-      <div class="tiles">
-        <div class="tile">
-          <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8.5 3.5v17"/></svg>
-          <span>Biblioteca</span>
-        </div>
-        <div class="tile">
-          <svg viewBox="0 0 24 24"><path d="M5 8h14l-1.2 12H6.2L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
-          <span>Loja</span>
-        </div>
-        <div class="tile">
-          <svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><circle cx="17" cy="10" r="2.2"/><path d="M16 15.2c2.6.2 4.5 1.8 4.5 3.8"/></svg>
-          <span>Amigos</span>
-        </div>
-        <div class="tile">
-          <svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M8 6H5v2a3 3 0 0 0 3 3"/><path d="M16 6h3v2a3 3 0 0 1-3 3"/><path d="M12 13v4"/><path d="M9 20h6"/></svg>
-          <span>Trofeus</span>
-        </div>
+    <!-- Barra Inferior (Play, Select, Start) -->
+    <div class="bottom-bar">
+      <div class="bottom-btn btn-play-icon">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
       </div>
-    </main>
-
-    <!-- Controles -->
-    <footer class="controls">
-      <div class="ctrl">
-        <div class="btn"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></div>
-        <span class="lbl">Confirmar</span>
-      </div>
-      <div class="ctrl">
-        <div class="btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/></svg></div>
-        <span class="lbl">Voltar</span>
-      </div>
-      <div class="ctrl">
-        <div class="btn"><svg viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11"/></svg></div>
-        <span class="lbl">Opções</span>
-      </div>
-      <div class="ctrl">
-        <div class="btn"><svg viewBox="0 0 24 24"><path d="M12 5.5L19 18H5z"/></svg></div>
-        <span class="lbl">Detalhes</span>
-      </div>
-    </footer>
+      <div class="bottom-btn">SELECT</div>
+      <div class="bottom-btn">START</div>
+    </div>
 
   </div>
 
 <script>
-  const boot     = document.getElementById('boot');
-  const playBtn  = document.getElementById('playBtn');
-  const ui       = document.getElementById('ui');
-  const clockEl  = document.getElementById('clock');
+  const boot = document.getElementById('boot');
+  const playBtn = document.getElementById('playBtn');
+  const ui = document.getElementById('ui');
 
-  // Áudio ambiente
+  // Configuração do Áudio
   const audio = new Audio('sound.mp3');
-  audio.loop   = true;
-  audio.volume = 0.85;
+  audio.loop = true;   // Loop infinito
+  audio.volume = 1.0;  // Volume máximo (bem alto)
 
-  // Relógio da barra superior
-  function updateClock(){
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2,'0');
-    const m = String(now.getMinutes()).padStart(2,'0');
-    clockEl.textContent = h + ':' + m;
-  }
-  updateClock();
-  setInterval(updateClock, 15000);
-
-  // Iniciar
+  // Ação do Botão Play
   playBtn.addEventListener('click', () => {
-    playBtn.disabled = true;
+    // Inicia a música
+    audio.play().catch(error => {
+      console.log("Erro ao tocar áudio. Verifique se o arquivo sound.mp3 existe e se o navegador permite autoplay.", error);
+    });
 
-    // Toca o som (o clique do usuário libera o autoplay)
-    audio.play().catch(() => {});
-
-    // Some com a tela de play e revela a interface
+    // Esconde a tela inicial e mostra os controles
     boot.classList.add('hide');
     ui.classList.add('show');
-  }, { once:true });
+  }, { once: true }); // O evento só ocorre uma vez
 </script>
 
 </body>
