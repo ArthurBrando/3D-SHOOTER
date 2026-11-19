@@ -2,1299 +2,388 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Ping Pong Cartoon</title>
-
-<!-- Favicon: raquete.png (fallback SVG caso o png falhe) -->
-<link rel="icon" type="image/png" href="raquete.png">
-<link rel="shortcut icon" type="image/png" href="raquete.png">
-<link rel="apple-touch-icon" href="raquete.png">
-<link rel="icon" type="image/svg+xml"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231a1a2e'/%3E%3Ccircle cx='25' cy='25' r='17' fill='%23FF6B6B' stroke='%23000' stroke-width='3'/%3E%3Crect x='33' y='34' width='10' height='26' rx='5' fill='%238B4513' stroke='%23000' stroke-width='3' transform='rotate(-40 38 47)'/%3E%3Ccircle cx='47' cy='17' r='8' fill='%23fff' stroke='%23000' stroke-width='3'/%3E%3C/svg%3E">
-
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PS5 Emulator</title>
 <style>
-  :root {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --ink: #1a1a1a;
-    --accent: #FF6B6B;
-    --accent2: #4ECDC4;
-    --accent3: #FFE66D;
-    --green: #95E1D3;
-    --purple: #A29BFE;
-    --orange: #FF8C42;
-    --table: #2E5C8A;
-    --tableLight: #3A75A8;
-    --line: #fff;
-    --net: #FF6B6B;
-    --shadow: 0 8px 0 rgba(0,0,0,0.25);
-    --radius: 20px;
+  /* ========== BASE ========== */
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body{ height:100%; overflow:hidden; }
+  body{
+    font-family:"Segoe UI", system-ui, -apple-system, sans-serif;
+    color:#fff;
+    background:#000;
+    user-select:none;
   }
 
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: none;
+  /* ========== FUNDO ========== */
+  #bg{
+    position:fixed; inset:0; z-index:0;
+    background:url("background.png") center center / cover no-repeat;
+    animation:kenburns 32s ease-in-out infinite alternate;
+  }
+  @keyframes kenburns{
+    from{ transform:scale(1); }
+    to  { transform:scale(1.08); }
   }
 
-  html, body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    font-family: 'Nunito', sans-serif;
-    background: linear-gradient(180deg, #1a1a2e 0%, #0f3460 100%);
-    color: var(--ink);
+  /* ========== TELA DE BOOT (PLAY) ========== */
+  #boot{
+    position:fixed; inset:0; z-index:30;
+    display:grid; place-items:center;
+    background:radial-gradient(circle at 50% 50%,
+                rgba(0,0,0,.20) 0%,
+                rgba(0,0,0,.55) 70%,
+                rgba(0,0,0,.75) 100%);
+    transition:opacity .9s ease, visibility .9s ease;
+  }
+  #boot.hide{ opacity:0; visibility:hidden; }
+
+  .play{
+    position:relative;
+    width:clamp(96px, 15vmin, 140px);
+    aspect-ratio:1/1;
+    border-radius:50%;
+    border:2px solid #fff;
+    background:rgba(255,255,255,.05);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+    display:grid; place-items:center;
+    cursor:pointer;
+    animation:glow 2.6s ease-in-out infinite;
+    transition:transform .3s ease, background .3s ease;
+  }
+  .play:hover{ transform:scale(1.08); background:rgba(255,255,255,.18); }
+  .play:active{ transform:scale(.95); }
+  .play svg{ width:40%; height:40%; fill:#fff; margin-left:9%; }
+
+  .play::after{
+    content:"";
+    position:absolute; inset:-2px;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,.55);
+    animation:ripple 2.6s ease-out infinite;
+    pointer-events:none;
+  }
+  @keyframes ripple{
+    0%  { transform:scale(1);   opacity:.8; }
+    100%{ transform:scale(1.6); opacity:0;  }
+  }
+  @keyframes glow{
+    0%,100%{ box-shadow:0 0 0 0 rgba(255,255,255,.35), 0 0 40px rgba(255,255,255,.15); }
+    50%    { box-shadow:0 0 0 18px rgba(255,255,255,0), 0 0 70px rgba(255,255,255,.35); }
   }
 
-  #game-container {
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
+  /* ========== INTERFACE DO EMULADOR ========== */
+  #ui{
+    position:fixed; inset:0; z-index:10;
+    display:flex; flex-direction:column;
+    opacity:0; transform:scale(1.03);
+    pointer-events:none;
+    transition:opacity 1s ease, transform 1.2s ease;
+    background:linear-gradient(180deg,
+                rgba(0,0,0,.60) 0%,
+                rgba(0,0,0,.10) 35%,
+                rgba(0,0,0,.10) 60%,
+                rgba(0,0,0,.75) 100%);
+  }
+  #ui.show{ opacity:1; transform:scale(1); pointer-events:auto; }
+
+  /* --- Barra superior --- */
+  .topbar{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:24px 36px;
+    opacity:0; transform:translateY(-14px);
+    transition:opacity .8s ease, transform .8s ease;
+  }
+  #ui.show .topbar{ opacity:1; transform:none; transition-delay:.15s; }
+
+  .user{ display:flex; align-items:center; gap:14px; }
+  .avatar{
+    width:44px; height:44px; border-radius:50%;
+    border:2px solid #fff;
+    background:rgba(255,255,255,.06);
+    backdrop-filter:blur(6px);
+    display:grid; place-items:center;
+    font-size:13px; font-weight:600; letter-spacing:.05em;
+  }
+  .user .name{ font-size:14px; font-weight:600; letter-spacing:.04em; }
+  .user .status{
+    display:flex; align-items:center; gap:6px;
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:rgba(255,255,255,.65);
+  }
+  .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:#fff; box-shadow:0 0 8px #fff;
   }
 
-  canvas {
-    display: block;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    background: #0f3460;
-    max-width: 95vw;
-    max-height: 95vh;
+  .topright{ display:flex; align-items:center; gap:18px; }
+  .clock{
+    font-size:14px; letter-spacing:.10em;
+    color:rgba(255,255,255,.9);
+  }
+  .iconbtn{
+    width:40px; height:40px; border-radius:50%;
+    border:2px solid rgba(255,255,255,.85);
+    background:transparent;
+    display:grid; place-items:center;
+    cursor:pointer;
+    transition:background .25s ease, transform .25s ease;
+  }
+  .iconbtn:hover{ background:rgba(255,255,255,.18); transform:scale(1.08); }
+  .iconbtn svg{
+    width:18px; height:18px;
+    fill:none; stroke:#fff; stroke-width:2;
+    stroke-linecap:round; stroke-linejoin:round;
   }
 
-  .screen {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
-    background: linear-gradient(180deg, #1a1a2e 0%, #0f3460 100%);
-    padding: 20px;
+  /* --- Palco central --- */
+  .stage{
+    flex:1;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:0 32px;
+    text-align:center;
+    opacity:0; transform:translateY(20px);
+    transition:opacity .9s ease, transform .9s ease;
+  }
+  #ui.show .stage{ opacity:1; transform:none; transition-delay:.35s; }
+
+  .ps-logo{
+    font-size:clamp(46px, 9vw, 92px);
+    font-weight:200;
+    letter-spacing:.22em;
+    line-height:1;
+    text-indent:.22em;
+    text-shadow:0 0 40px rgba(255,255,255,.35);
+  }
+  .ps-title{
+    margin-top:14px;
+    font-size:clamp(14px, 2vw, 18px);
+    font-weight:400;
+    letter-spacing:.42em;
+    text-transform:uppercase;
+    text-indent:.42em;
+    color:rgba(255,255,255,.9);
+  }
+  .ps-sub{
+    margin-top:10px;
+    font-size:12px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.5);
   }
 
-  .screen.active {
-    display: flex;
+  /* --- Tiles (cards vazados) --- */
+  .tiles{
+    display:flex; flex-wrap:wrap; gap:16px;
+    justify-content:center;
+    margin-top:44px;
+  }
+  .tile{
+    width:150px; height:92px;
+    border:2px solid rgba(255,255,255,.75);
+    border-radius:14px;
+    background:rgba(255,255,255,.04);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:9px;
+    cursor:pointer;
+    transition:background .3s ease, transform .3s ease, border-color .3s ease;
+  }
+  .tile:hover{
+    background:rgba(255,255,255,.16);
+    border-color:#fff;
+    transform:translateY(-6px);
+  }
+  .tile svg{
+    width:24px; height:24px;
+    fill:none; stroke:#fff; stroke-width:1.8;
+    stroke-linecap:round; stroke-linejoin:round;
+  }
+  .tile span{
+    font-size:10.5px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.85);
   }
 
-  h1 {
-    font-family: 'Fredoka One', cursive;
-    font-size: clamp(2rem, 7vw, 4rem);
-    color: var(--accent3);
-    text-shadow: 4px 4px 0 #000, -2px -2px 0 #000;
-    margin-bottom: 10px;
-    text-align: center;
-    letter-spacing: 2px;
-    animation: bounceIn 1s ease;
+  /* --- Barra de controles (vazados) --- */
+  .controls{
+    display:flex; flex-wrap:wrap; gap:34px;
+    justify-content:center; align-items:center;
+    padding:0 32px 40px;
+    opacity:0; transform:translateY(20px);
+    transition:opacity .9s ease, transform .9s ease;
+  }
+  #ui.show .controls{ opacity:1; transform:none; transition-delay:.6s; }
+
+  .ctrl{
+    display:flex; align-items:center; gap:12px;
+    cursor:pointer;
+  }
+  .btn{
+    width:46px; height:46px; border-radius:50%;
+    border:2px solid rgba(255,255,255,.9);
+    background:transparent;
+    display:grid; place-items:center;
+    transition:background .25s ease, transform .25s ease, box-shadow .25s ease;
+  }
+  .btn svg{
+    width:22px; height:22px;
+    fill:none; stroke:#fff; stroke-width:2;
+    stroke-linecap:round; stroke-linejoin:round;
+  }
+  .ctrl:hover .btn{
+    background:rgba(255,255,255,.18);
+    transform:scale(1.12);
+    box-shadow:0 0 22px rgba(255,255,255,.35);
+  }
+  .ctrl .lbl{
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.8);
   }
 
-  h2 {
-    font-family: 'Fredoka One', cursive;
-    font-size: clamp(1.3rem, 4vw, 2rem);
-    color: #fff;
-    text-shadow: 3px 3px 0 #000;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-
-  .subtitle {
-    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-    color: #fff;
-    margin-bottom: 30px;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    font-weight: 700;
-    text-align: center;
-  }
-
-  .btn {
-    font-family: 'Fredoka One', cursive;
-    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-    padding: 14px 30px;
-    margin: 8px;
-    border: 3px solid #000;
-    border-radius: var(--radius);
-    cursor: pointer;
-    box-shadow: 0 6px 0 #000;
-    transition: transform 0.1s, box-shadow 0.1s;
-    color: #000;
-    min-width: 240px;
-    text-align: center;
-    user-select: none;
-  }
-
-  .btn:active {
-    transform: translateY(6px);
-    box-shadow: 0 0 0 #000;
-  }
-
-  .btn-primary { background: var(--accent3); }
-  .btn-secondary { background: var(--accent2); }
-  .btn-green { background: var(--green); }
-  .btn-purple { background: var(--purple); color: #fff; text-shadow: 1px 1px 0 #000; }
-  .btn-orange { background: var(--orange); }
-  .btn-red { background: var(--accent); color: #fff; }
-
-  .btn-row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    max-width: 500px;
-  }
-
-  .settings-panel {
-    background: var(--surface);
-    border: 4px solid #000;
-    border-radius: var(--radius);
-    padding: 25px;
-    max-width: 450px;
-    width: 90%;
-    box-shadow: var(--shadow);
-  }
-
-  .setting-item {
-    margin-bottom: 18px;
-  }
-
-  .setting-item label {
-    display: block;
-    font-weight: 900;
-    font-size: 1rem;
-    margin-bottom: 6px;
-    color: #fff;
-  }
-
-  .setting-item input[type="range"] {
-    width: 100%;
-    accent-color: var(--accent3);
-  }
-
-  .setting-item select {
-    width: 100%;
-    padding: 10px;
-    border: 3px solid #000;
-    border-radius: 10px;
-    font-family: 'Nunito', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
-    background: #fff;
-  }
-
-  .value-display {
-    display: inline-block;
-    background: var(--accent3);
-    padding: 2px 10px;
-    border: 2px solid #000;
-    border-radius: 8px;
-    font-weight: 900;
-    margin-left: 10px;
-    color: #000;
-  }
-
-  .back-btn {
-    margin-top: 15px;
-  }
-
-  .hud {
-    position: absolute;
-    top: 8px;
-    left: 0;
-    width: 100%;
-    display: none;
-    justify-content: space-between;
-    padding: 0 25px;
-    pointer-events: none;
-    z-index: 5;
-  }
-
-  .hud.active {
-    display: flex;
-  }
-
-  .score-box {
-    font-family: 'Fredoka One', cursive;
-    font-size: clamp(1.3rem, 3.5vw, 2rem);
-    color: #fff;
-    text-shadow: 3px 3px 0 #000;
-    background: rgba(0,0,0,0.3);
-    padding: 5px 18px;
-    border-radius: 12px;
-    border: 2px solid rgba(255,255,255,0.3);
-  }
-
-  .pause-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7);
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 20;
-  }
-
-  .pause-overlay.active {
-    display: flex;
-  }
-
-  .controls-info {
-    margin-top: 20px;
-    background: rgba(255,255,255,0.1);
-    border: 2px solid rgba(255,255,255,0.2);
-    border-radius: 15px;
-    padding: 18px;
-    color: #fff;
-    max-width: 450px;
-    text-align: center;
-    font-size: 0.88rem;
-    line-height: 1.6;
-  }
-
-  .controls-info h3 {
-    font-family: 'Fredoka One', cursive;
-    margin-bottom: 8px;
-    color: var(--accent3);
-  }
-
-  .key {
-    display: inline-block;
-    background: #fff;
-    color: #000;
-    padding: 2px 8px;
-    border-radius: 6px;
-    border: 2px solid #000;
-    font-weight: 900;
-    font-size: 0.8rem;
-    margin: 0 2px;
-  }
-
-  .camera-hint {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.5);
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    pointer-events: none;
-    z-index: 5;
-    display: none;
-    white-space: nowrap;
-  }
-
-  .camera-hint.active {
-    display: block;
-  }
-
-  @keyframes bounceIn {
-    0% { transform: scale(0.3); opacity: 0; }
-    50% { transform: scale(1.05); }
-    70% { transform: scale(0.9); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  @media (max-width: 400px) {
-    .hud {
-      padding: 0 12px;
-      top: 5px;
-    }
-    .settings-panel {
-      padding: 18px 12px;
-    }
+  /* ========== RESPONSIVO ========== */
+  @media (max-width:640px){
+    .topbar{ padding:18px 20px; }
+    .user .name, .user .status{ display:none; }
+    .clock{ font-size:12px; }
+    .tiles{ gap:12px; margin-top:30px; }
+    .tile{ width:118px; height:80px; }
+    .controls{ gap:20px; padding-bottom:28px; }
+    .btn{ width:40px; height:40px; }
+    .btn svg{ width:18px; height:18px; }
+    .ctrl .lbl{ display:none; }
   }
 </style>
 </head>
 <body>
 
-<div id="game-container">
-  <canvas id="gameCanvas"></canvas>
+  <!-- Fundo -->
+  <div id="bg"></div>
 
-  <div id="hud" class="hud">
-    <div class="score-box" id="scoreLeft">0</div>
-    <div class="score-box" id="scoreRight">0</div>
+  <!-- Tela inicial com o botão de play -->
+  <div id="boot">
+    <button class="play" id="playBtn" aria-label="Iniciar">
+      <svg viewBox="0 0 24 24"><path d="M8 5.2v13.6L19 12z"/></svg>
+    </button>
   </div>
 
-  <div id="cameraHint" class="camera-hint">Arraste a raquete para mover &bull; 2 dedos / Botao direito para camera</div>
+  <!-- Interface do emulador -->
+  <div id="ui">
 
-  <div id="pauseOverlay" class="pause-overlay">
-    <h2>Pausado</h2>
-    <button class="btn btn-green" onclick="resumeGame()">Continuar</button>
-    <button class="btn btn-orange" onclick="openSettingsFromPause()">Configuracoes</button>
-    <button class="btn btn-red" onclick="backToMenu()">Sair para o Menu</button>
-  </div>
+    <!-- Barra superior -->
+    <header class="topbar">
+      <div class="user">
+        <div class="avatar">P1</div>
+        <div>
+          <div class="name">Player_01</div>
+          <div class="status"><span class="dot"></span>Online</div>
+        </div>
+      </div>
 
-  <div id="lobbyScreen" class="screen active">
-    <h1>PING PONG</h1>
-    <div class="subtitle">Arraste a raquete livremente &bull; Mova a camera</div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="startSinglePlayer()">1 Jogador vs Robo</button>
-      <button class="btn btn-secondary" onclick="startMultiPlayer()">2 Jogadores Local</button>
-      <button class="btn btn-purple" onclick="openSettings()">Configuracoes</button>
-    </div>
-    <div class="controls-info">
-      <h3>Como Jogar</h3>
-      <p><strong>Arraste</strong> a raquete com dedo/mouse para se mover em <strong>todos os lados</strong></p>
-      <p>Incluindo para os <strong>lados da mesa</strong> e para <strong>tras</strong> (alem da linha)</p>
-      <p><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> ou <span class="key">Setas</span> para camera</p>
-      <p><span class="key">Botao direito</span> do mouse e arraste para camera</p>
-      <p><span class="key">2 dedos</span> no mobile para mover camera</p>
-      <p><span class="key">P</span> ou <span class="key">Esc</span> para pausar</p>
-    </div>
-  </div>
+      <div class="topright">
+        <span class="clock" id="clock">00:00</span>
 
-  <div id="settingsScreen" class="screen">
-    <h2>Configuracoes</h2>
-    <div class="settings-panel">
-      <div class="setting-item">
-        <label>Dificuldade do Robo <span class="value-display" id="difficultyValue">Normal</span></label>
-        <select id="difficultySelect" onchange="updateDifficulty()">
-          <option value="easy">Facil</option>
-          <option value="normal" selected>Normal</option>
-          <option value="hard">Dificil</option>
-          <option value="impossible">Impossivel</option>
-        </select>
-      </div>
-      <div class="setting-item">
-        <label>Pontuacao Maxima <span class="value-display" id="maxScoreValue">10</span></label>
-        <input type="range" id="maxScore" min="3" max="21" value="10" oninput="updateMaxScore()">
-      </div>
-      <div class="setting-item">
-        <label>Velocidade da Bola <span class="value-display" id="ballSpeedValue">Normal</span></label>
-        <input type="range" id="ballSpeed" min="1" max="5" value="3" oninput="updateBallSpeed()">
-      </div>
-      <div class="setting-item">
-        <label>Tamanho da Raquete <span class="value-display" id="paddleSizeValue">Normal</span></label>
-        <input type="range" id="paddleSize" min="1" max="3" value="2" oninput="updatePaddleSize()">
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-green back-btn" onclick="backToMenu()">Voltar ao Menu</button>
-      </div>
-    </div>
-  </div>
+        <button class="iconbtn" aria-label="Buscar">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.6-4.6"/></svg>
+        </button>
 
-  <div id="gameOverScreen" class="screen">
-    <h1 id="winnerText">Vencedor!</h1>
-    <div class="subtitle" id="gameOverSubtitle">Placar Final</div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="restartGame()">Revanche</button>
-      <button class="btn btn-purple" onclick="backToMenu()">Menu Principal</button>
-    </div>
+        <button class="iconbtn" aria-label="Configurações">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.1"/><circle cx="15" cy="12" r="2.1"/><circle cx="8" cy="17" r="2.1"/></svg>
+        </button>
+
+        <button class="iconbtn" aria-label="Desligar">
+          <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.6 6.6a8 8 0 1 0 10.8 0"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Conteúdo central -->
+    <main class="stage">
+      <div class="ps-logo">PS5</div>
+      <div class="ps-title">PlayStation®5</div>
+      <div class="ps-sub">Emulador · Demonstração</div>
+
+      <div class="tiles">
+        <div class="tile">
+          <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8.5 3.5v17"/></svg>
+          <span>Biblioteca</span>
+        </div>
+        <div class="tile">
+          <svg viewBox="0 0 24 24"><path d="M5 8h14l-1.2 12H6.2L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+          <span>Loja</span>
+        </div>
+        <div class="tile">
+          <svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><circle cx="17" cy="10" r="2.2"/><path d="M16 15.2c2.6.2 4.5 1.8 4.5 3.8"/></svg>
+          <span>Amigos</span>
+        </div>
+        <div class="tile">
+          <svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M8 6H5v2a3 3 0 0 0 3 3"/><path d="M16 6h3v2a3 3 0 0 1-3 3"/><path d="M12 13v4"/><path d="M9 20h6"/></svg>
+          <span>Trofeus</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Controles -->
+    <footer class="controls">
+      <div class="ctrl">
+        <div class="btn"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></div>
+        <span class="lbl">Confirmar</span>
+      </div>
+      <div class="ctrl">
+        <div class="btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/></svg></div>
+        <span class="lbl">Voltar</span>
+      </div>
+      <div class="ctrl">
+        <div class="btn"><svg viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11"/></svg></div>
+        <span class="lbl">Opções</span>
+      </div>
+      <div class="ctrl">
+        <div class="btn"><svg viewBox="0 0 24 24"><path d="M12 5.5L19 18H5z"/></svg></div>
+        <span class="lbl">Detalhes</span>
+      </div>
+    </footer>
+
   </div>
-</div>
 
 <script>
-/* ============================
-   CONFIGURACOES E ESTADO
-   ============================ */
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+  const boot     = document.getElementById('boot');
+  const playBtn  = document.getElementById('playBtn');
+  const ui       = document.getElementById('ui');
+  const clockEl  = document.getElementById('clock');
 
-let gameState = 'lobby';
-let gameMode = 'single';
-let animationId;
+  // Áudio ambiente
+  const audio = new Audio('sound.mp3');
+  audio.loop   = true;
+  audio.volume = 0.85;
 
-const settings = {
-  difficulty: 'normal',
-  maxScore: 10,
-  ballSpeed: 3,
-  paddleSize: 2
-};
-
-const difficultyConfig = {
-  easy: { reaction: 0.35, speedFactor: 0.55, errorChance: 0.4, predict: false },
-  normal: { reaction: 0.65, speedFactor: 0.85, errorChance: 0.18, predict: true },
-  hard: { reaction: 0.9, speedFactor: 1.1, errorChance: 0.04, predict: true },
-  impossible: { reaction: 1.0, speedFactor: 1.35, errorChance: 0.0, predict: true }
-};
-
-/* ============================
-   CAMERA E MESA
-   ============================ */
-const TABLE_W = 450;
-const TABLE_H = 800;
-
-let camera = { x: 0, y: 0 };
-let isPanning = false;
-let panStart = { x: 0, y: 0 };
-let cameraStart = { x: 0, y: 0 };
-
-function clampCamera() {
-  const margin = 150;
-  camera.x = Math.max(-margin, Math.min(margin, camera.x));
-  camera.y = Math.max(-margin, Math.min(margin, camera.y));
-}
-
-/* ============================
-   OBJETOS DO JOGO
-   ============================ */
-let paddleLeft, paddleRight, ball, scores;
-
-function initGame() {
-  const paddleW = 70;
-  const paddleH = 18 * (0.7 + settings.paddleSize * 0.3);
-
-  paddleLeft = {
-    x: TABLE_W / 2,
-    y: TABLE_H - 100,
-    width: paddleW,
-    height: paddleH,
-    color: '#FF6B6B',
-    isDragging: false,
-    dragOffsetX: 0,
-    dragOffsetY: 0,
-    trail: []
-  };
-
-  paddleRight = {
-    x: TABLE_W / 2,
-    y: 100,
-    width: paddleW,
-    height: paddleH,
-    color: '#4ECDC4',
-    isDragging: false,
-    dragOffsetX: 0,
-    dragOffsetY: 0,
-    trail: []
-  };
-
-  scores = { left: 0, right: 0 };
-  updateHUD();
-  resetBall();
-}
-
-function resetBall() {
-  const speedMap = [2.5, 3.5, 4.5, 5.5, 7];
-  const baseSpeed = speedMap[settings.ballSpeed - 1] || 4.5;
-  const angle = (Math.random() * Math.PI / 3) - Math.PI / 6;
-  const direction = Math.random() > 0.5 ? 1 : -1;
-
-  ball = {
-    x: TABLE_W / 2,
-    y: TABLE_H / 2,
-    radius: 10,
-    dx: Math.sin(angle) * baseSpeed * 0.5,
-    dy: direction * baseSpeed,
-    trail: [],
-    shadowY: 0,
-    bounceCount: 0,
-    lastBounceSide: null
-  };
-}
-
-/* ============================
-   INPUT - DRAG E CAMERA
-   ============================ */
-const keys = {};
-
-window.addEventListener('keydown', (e) => {
-  keys[e.key.toLowerCase()] = true;
-  if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
-    if (gameState === 'playing') pauseGame();
-    else if (gameState === 'paused') resumeGame();
+  // Relógio da barra superior
+  function updateClock(){
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    clockEl.textContent = h + ':' + m;
   }
-});
-
-window.addEventListener('keyup', (e) => {
-  keys[e.key.toLowerCase()] = false;
-});
-
-function updateCameraKeys() {
-  const speed = 6;
-  if (keys['w'] || keys['arrowup']) camera.y -= speed;
-  if (keys['s'] || keys['arrowdown']) camera.y += speed;
-  if (keys['a'] || keys['arrowleft']) camera.x -= speed;
-  if (keys['d'] || keys['arrowright']) camera.x += speed;
-  clampCamera();
-}
-
-/* MOUSE */
-canvas.addEventListener('mousedown', (e) => {
-  if (gameState !== 'playing' && gameState !== 'paused') return;
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const mx = (e.clientX - rect.left) * scaleX;
-  const my = (e.clientY - rect.top) * scaleY;
-
-  if (e.button === 2) {
-    isPanning = true;
-    panStart = { x: e.clientX, y: e.clientY };
-    cameraStart = { x: camera.x, y: camera.y };
-    e.preventDefault();
-    return;
-  }
-
-  const worldPos = screenToWorld(mx, my);
-  tryGrabPaddle(worldPos.x, worldPos.y);
-});
-
-window.addEventListener('mousemove', (e) => {
-  if (gameState !== 'playing' && gameState !== 'paused') return;
-
-  if (isPanning) {
-    const dx = e.clientX - panStart.x;
-    const dy = e.clientY - panStart.y;
-    camera.x = cameraStart.x - dx * 0.8;
-    camera.y = cameraStart.y - dy * 0.8;
-    clampCamera();
-    return;
-  }
-
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const mx = (e.clientX - rect.left) * scaleX;
-  const my = (e.clientY - rect.top) * scaleY;
-  const worldPos = screenToWorld(mx, my);
-
-  moveDraggedPaddle(worldPos.x, worldPos.y);
-});
-
-window.addEventListener('mouseup', () => {
-  isPanning = false;
-  releasePaddles();
-});
-
-canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
-/* TOUCH */
-canvas.addEventListener('touchstart', (e) => {
-  if (gameState !== 'playing' && gameState !== 'paused') return;
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-
-  if (e.touches.length === 2) {
-    isPanning = true;
-    panStart = {
-      x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-      y: (e.touches[0].clientY + e.touches[1].clientY) / 2
-    };
-    cameraStart = { x: camera.x, y: camera.y };
-    releasePaddles();
-    return;
-  }
-
-  if (e.touches.length === 1) {
-    const mx = (e.touches[0].clientX - rect.left) * scaleX;
-    const my = (e.touches[0].clientY - rect.top) * scaleY;
-    const worldPos = screenToWorld(mx, my);
-    tryGrabPaddle(worldPos.x, worldPos.y);
-  }
-}, { passive: false });
-
-canvas.addEventListener('touchmove', (e) => {
-  if (gameState !== 'playing' && gameState !== 'paused') return;
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-
-  if (isPanning && e.touches.length === 2) {
-    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-    const dx = cx - panStart.x;
-    const dy = cy - panStart.y;
-    camera.x = cameraStart.x - dx * 0.8;
-    camera.y = cameraStart.y - dy * 0.8;
-    clampCamera();
-    return;
-  }
-
-  if (e.touches.length === 1) {
-    const mx = (e.touches[0].clientX - rect.left) * scaleX;
-    const my = (e.touches[0].clientY - rect.top) * scaleY;
-    const worldPos = screenToWorld(mx, my);
-    moveDraggedPaddle(worldPos.x, worldPos.y);
-  }
-}, { passive: false });
-
-canvas.addEventListener('touchend', (e) => {
-  if (e.touches.length < 2) isPanning = false;
-  if (e.touches.length === 0) releasePaddles();
-});
-
-/* DRAG LOGIC */
-function tryGrabPaddle(wx, wy) {
-  if (pointInPaddle(wx, wy, paddleLeft)) {
-    paddleLeft.isDragging = true;
-    paddleLeft.dragOffsetX = wx - paddleLeft.x;
-    paddleLeft.dragOffsetY = wy - paddleLeft.y;
-    return;
-  }
-
-  if (gameMode === 'multi' && pointInPaddle(wx, wy, paddleRight)) {
-    paddleRight.isDragging = true;
-    paddleRight.dragOffsetX = wx - paddleRight.x;
-    paddleRight.dragOffsetY = wy - paddleRight.y;
-  }
-}
-
-function moveDraggedPaddle(wx, wy) {
-  if (paddleLeft.isDragging) {
-    paddleLeft.x = wx - paddleLeft.dragOffsetX;
-    paddleLeft.y = wy - paddleLeft.dragOffsetY;
-    clampPaddle(paddleLeft, 'bottom');
-  }
-  if (paddleRight.isDragging) {
-    paddleRight.x = wx - paddleRight.dragOffsetX;
-    paddleRight.y = wy - paddleRight.dragOffsetY;
-    clampPaddle(paddleRight, 'top');
-  }
-}
-
-function releasePaddles() {
-  paddleLeft.isDragging = false;
-  paddleRight.isDragging = false;
-}
-
-function pointInPaddle(px, py, paddle) {
-  return px >= paddle.x - paddle.width / 2 - 25 &&
-         px <= paddle.x + paddle.width / 2 + 25 &&
-         py >= paddle.y - paddle.height / 2 - 25 &&
-         py <= paddle.y + paddle.height / 2 + 25;
-}
-
-/* CLAMP PADDLE - movimento livre em X e Y, incluindo para os lados e para tras */
-function clampPaddle(p, side) {
-  const halfW = p.width / 2;
-  const halfH = p.height / 2;
-
-  // Limites laterais (X) - pode ir alem da mesa para os lados
-  p.x = Math.max(-80 + halfW, Math.min(TABLE_W + 80 - halfW, p.x));
-
-  // Limites verticais (Y) - pode ir para tras (alem da linha de fundo)
-  if (side === 'bottom') {
-    // Jogador de baixo: pode ir ate a rede (centro) e para tras alem da mesa
-    p.y = Math.max(TABLE_H / 2 + 15, Math.min(TABLE_H + 120 - halfH, p.y));
-  } else {
-    // Jogador de cima: pode ir ate a rede e para tras alem da mesa
-    p.y = Math.max(-120 + halfH, Math.min(TABLE_H / 2 - 15, p.y));
-  }
-}
-
-/* ============================
-   COORDENADAS
-   ============================ */
-function screenToWorld(sx, sy) {
-  const cx = canvas.width / 2 + camera.x;
-  const cy = canvas.height / 2 + camera.y;
-  const scale = getScale();
-  return {
-    x: (sx - cx) / scale + TABLE_W / 2,
-    y: (sy - cy) / scale + TABLE_H / 2
-  };
-}
-
-function worldToScreen(wx, wy) {
-  const cx = canvas.width / 2 + camera.x;
-  const cy = canvas.height / 2 + camera.y;
-  const scale = getScale();
-  return {
-    x: (wx - TABLE_W / 2) * scale + cx,
-    y: (wy - TABLE_H / 2) * scale + cy
-  };
-}
-
-function getScale() {
-  const scaleX = canvas.width / TABLE_W;
-  const scaleY = canvas.height / TABLE_H;
-  return Math.min(scaleX, scaleY) * 0.92;
-}
-
-/* ============================
-   TELAS
-   ============================ */
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  if (id) document.getElementById(id).classList.add('active');
-}
-
-function openSettings() {
-  gameState = 'settings';
-  showScreen('settingsScreen');
-}
-
-function openSettingsFromPause() {
-  gameState = 'settings';
-  document.getElementById('pauseOverlay').classList.remove('active');
-  showScreen('settingsScreen');
-}
-
-function backToMenu() {
-  gameState = 'lobby';
-  stopLoop();
-  document.getElementById('hud').classList.remove('active');
-  document.getElementById('cameraHint').classList.remove('active');
-  document.getElementById('pauseOverlay').classList.remove('active');
-  showScreen('lobbyScreen');
-  resizeCanvas();
-}
-
-function startSinglePlayer() {
-  gameMode = 'single';
-  startGame();
-}
-
-function startMultiPlayer() {
-  gameMode = 'multi';
-  startGame();
-}
-
-function startGame() {
-  gameState = 'playing';
-  showScreen(null);
-  document.getElementById('hud').classList.add('active');
-  document.getElementById('cameraHint').classList.add('active');
-  setTimeout(() => {
-    document.getElementById('cameraHint').classList.remove('active');
-  }, 6000);
-  resizeCanvas();
-  camera = { x: 0, y: 0 };
-  initGame();
-  startLoop();
-}
-
-function pauseGame() {
-  if (gameState !== 'playing') return;
-  gameState = 'paused';
-  document.getElementById('pauseOverlay').classList.add('active');
-}
-
-function resumeGame() {
-  if (gameState !== 'paused') return;
-  gameState = 'playing';
-  document.getElementById('pauseOverlay').classList.remove('active');
-}
-
-function restartGame() {
-  showScreen(null);
-  document.getElementById('hud').classList.add('active');
-  gameState = 'playing';
-  camera = { x: 0, y: 0 };
-  initGame();
-}
-
-function gameOver(winner) {
-  gameState = 'gameover';
-  stopLoop();
-  const winnerText = document.getElementById('winnerText');
-  const subtitle = document.getElementById('gameOverSubtitle');
-
-  if (gameMode === 'single') {
-    winnerText.textContent = winner === 'left' ? 'Voce Venceu!' : 'Robo Venceu!';
-    winnerText.style.color = winner === 'left' ? '#95E1D3' : '#FF6B6B';
-  } else {
-    winnerText.textContent = winner === 'left' ? 'Jogador 1 Venceu!' : 'Jogador 2 Venceu!';
-    winnerText.style.color = winner === 'left' ? '#FF6B6B' : '#4ECDC4';
-  }
-  subtitle.textContent = `Placar Final: ${scores.left} x ${scores.right}`;
-  showScreen('gameOverScreen');
-}
-
-/* ============================
-   CONFIGURACOES
-   ============================ */
-function updateDifficulty() {
-  const val = document.getElementById('difficultySelect').value;
-  settings.difficulty = val;
-  const labels = { easy: 'Facil', normal: 'Normal', hard: 'Dificil', impossible: 'Impossivel' };
-  document.getElementById('difficultyValue').textContent = labels[val];
-}
-
-function updateMaxScore() {
-  const val = parseInt(document.getElementById('maxScore').value);
-  settings.maxScore = val;
-  document.getElementById('maxScoreValue').textContent = val;
-}
-
-function updateBallSpeed() {
-  const val = parseInt(document.getElementById('ballSpeed').value);
-  settings.ballSpeed = val;
-  const labels = { 1: 'Muito Lenta', 2: 'Lenta', 3: 'Normal', 4: 'Rapida', 5: 'Extrema' };
-  document.getElementById('ballSpeedValue').textContent = labels[val];
-}
-
-function updatePaddleSize() {
-  const val = parseInt(document.getElementById('paddleSize').value);
-  settings.paddleSize = val;
-  const labels = { 1: 'Pequena', 2: 'Normal', 3: 'Grande' };
-  document.getElementById('paddleSizeValue').textContent = labels[val];
-}
-
-/* ============================
-   FISICA E IA
-   ============================ */
-function updateAI() {
-  if (gameMode !== 'single') return;
-  const cfg = difficultyConfig[settings.difficulty];
-  const paddle = paddleRight;
-
-  if (ball.dy > 0) return;
-
-  const targetX = ball.x;
-  const targetY = ball.y + 60;
-  let diffX = targetX - paddle.x;
-  let diffY = targetY - paddle.y;
-
-  if (cfg.errorChance > 0 && Math.random() < cfg.errorChance) {
-    diffX += (Math.random() - 0.5) * 120;
-    diffY += (Math.random() - 0.5) * 60;
-  }
-
-  const speed = 3.5 * cfg.speedFactor;
-
-  if (Math.random() > (1 - cfg.reaction)) {
-    if (Math.abs(diffX) > speed) paddle.x += Math.sign(diffX) * speed;
-    else paddle.x += diffX * 0.3;
-
-    if (Math.abs(diffY) > speed) paddle.y += Math.sign(diffY) * speed;
-    else paddle.y += diffY * 0.3;
-  }
-
-  if (cfg.predict && ball.dy < 0) {
-    const timeToReach = (paddle.y - ball.y) / Math.abs(ball.dy);
-    const predictedX = ball.x + ball.dx * timeToReach;
-    const predictDiff = predictedX - paddle.x;
-    if (Math.abs(predictDiff) > 5) {
-      paddle.x += Math.sign(predictDiff) * speed * 0.25;
-    }
-  }
-
-  clampPaddle(paddle, 'top');
-}
-
-function updateBall() {
-  ball.trail.push({ x: ball.x, y: ball.y });
-  if (ball.trail.length > 12) ball.trail.shift();
-
-  ball.x += ball.dx;
-  ball.y += ball.dy;
-
-  // Colisao com paredes laterais da mesa
-  if (ball.x - ball.radius < 10) {
-    ball.x = 10 + ball.radius;
-    ball.dx = Math.abs(ball.dx);
-  }
-  if (ball.x + ball.radius > TABLE_W - 10) {
-    ball.x = TABLE_W - 10 - ball.radius;
-    ball.dx = -Math.abs(ball.dx);
-  }
-
-  // Colisao com raquete esquerda (jogador de baixo)
-  if (checkPaddleHit(ball, paddleLeft)) {
-    ball.dy = -Math.abs(ball.dy) * 1.03;
-    const hitPoint = (ball.x - paddleLeft.x) / (paddleLeft.width / 2);
-    ball.dx = hitPoint * 4;
-    ball.lastBounceSide = 'left';
-    ball.bounceCount++;
-  }
-
-  // Colisao com raquete direita (jogador de cima / robo)
-  if (checkPaddleHit(ball, paddleRight)) {
-    ball.dy = Math.abs(ball.dy) * 1.03;
-    const hitPoint = (ball.x - paddleRight.x) / (paddleRight.width / 2);
-    ball.dx = hitPoint * 4;
-    ball.lastBounceSide = 'right';
-    ball.bounceCount++;
-  }
-
-  // Pontuacao
-  if (ball.y > TABLE_H + 30) {
-    scores.right++;
-    checkWin();
-    updateHUD();
-    resetBall();
-  }
-  if (ball.y < -30) {
-    scores.left++;
-    checkWin();
-    updateHUD();
-    resetBall();
-  }
-}
-
-function checkPaddleHit(b, p) {
-  const halfW = p.width / 2 + b.radius;
-  const halfH = p.height / 2 + b.radius;
-  return b.x > p.x - halfW && b.x < p.x + halfW &&
-         b.y > p.y - halfH && b.y < p.y + halfH;
-}
-
-function checkWin() {
-  if (scores.left >= settings.maxScore) gameOver('left');
-  else if (scores.right >= settings.maxScore) gameOver('right');
-}
-
-function updateHUD() {
-  document.getElementById('scoreLeft').textContent = scores.left;
-  document.getElementById('scoreRight').textContent = scores.right;
-}
-
-/* ============================
-   DESENHO - MESA AZUL CLASSICA
-   ============================ */
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const scale = getScale();
-  const cx = canvas.width / 2 + camera.x;
-  const cy = canvas.height / 2 + camera.y;
-
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.scale(scale, scale);
-  ctx.translate(-TABLE_W / 2, -TABLE_H / 2);
-
-  drawFloor();
-  drawTable();
-  drawNet();
-  drawBall();
-  drawPaddle(paddleLeft);
-  drawPaddle(paddleRight);
-
-  ctx.restore();
-
-  if (gameState === 'paused') {
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-}
-
-function drawFloor() {
-  // Chao ao redor da mesa
-  ctx.fillStyle = '#5a4a3a';
-  ctx.fillRect(-200, -200, TABLE_W + 400, TABLE_H + 400);
-
-  // Linhas do chao (perspectiva)
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.lineWidth = 1;
-  for (let i = -150; i < TABLE_H + 150; i += 40) {
-    ctx.beginPath();
-    ctx.moveTo(-200, i);
-    ctx.lineTo(TABLE_W + 200, i);
-    ctx.stroke();
-  }
-}
-
-function drawTable() {
-  // Borda da mesa (madeira)
-  ctx.fillStyle = '#8B4513';
-  roundRect(-8, -8, TABLE_W + 16, TABLE_H + 16, 12);
-  ctx.fill();
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  // Superficie azul
-  ctx.fillStyle = '#2E5C8A';
-  roundRect(0, 0, TABLE_W, TABLE_H, 8);
-  ctx.fill();
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Linha de fundo (jogador de baixo)
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(0, TABLE_H - 60);
-  ctx.lineTo(TABLE_W, TABLE_H - 60);
-  ctx.stroke();
-
-  // Linha de fundo (jogador de cima)
-  ctx.beginPath();
-  ctx.moveTo(0, 60);
-  ctx.lineTo(TABLE_W, 60);
-  ctx.stroke();
-
-  // Linhas laterais
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(0, TABLE_H);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(TABLE_W, 0);
-  ctx.lineTo(TABLE_W, TABLE_H);
-  ctx.stroke();
-
-  // Linha central
-  ctx.setLineDash([10, 8]);
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(0, TABLE_H / 2);
-  ctx.lineTo(TABLE_W, TABLE_H / 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Linha central vertical (divisao de lados)
-  ctx.beginPath();
-  ctx.moveTo(TABLE_W / 2, 60);
-  ctx.lineTo(TABLE_W / 2, TABLE_H - 60);
-  ctx.stroke();
-
-  // Sombra da mesa
-  ctx.fillStyle = 'rgba(0,0,0,0.15)';
-  roundRect(15, TABLE_H + 5, TABLE_W - 30, 20, 5);
-  ctx.fill();
-
-  // Pes da mesa
-  drawTableLeg(TABLE_W * 0.15, TABLE_H);
-  drawTableLeg(TABLE_W * 0.85, TABLE_H);
-  drawTableLeg(TABLE_W * 0.15, 0);
-  drawTableLeg(TABLE_W * 0.85, 0);
-}
-
-function drawTableLeg(x, y) {
-  ctx.fillStyle = '#555';
-  ctx.fillRect(x - 8, y, 16, 50);
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x - 8, y, 16, 50);
-
-  ctx.fillStyle = '#333';
-  ctx.beginPath();
-  ctx.arc(x, y + 55, 6, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-}
-
-function drawNet() {
-  const netY = TABLE_H / 2;
-  const postH = 25;
-
-  // Postes
-  ctx.fillStyle = '#333';
-  ctx.fillRect(2, netY - postH / 2, 8, postH);
-  ctx.fillRect(TABLE_W - 10, netY - postH / 2, 8, postH);
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(2, netY - postH / 2, 8, postH);
-  ctx.strokeRect(TABLE_W - 10, netY - postH / 2, 8, postH);
-
-  // Tecido da rede
-  ctx.strokeStyle = '#FF6B6B';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(6, netY - postH / 2 + 2);
-  ctx.lineTo(TABLE_W - 6, netY - postH / 2 + 2);
-  ctx.stroke();
-
-  // Grade da rede
-  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-  ctx.lineWidth = 0.8;
-  for (let i = 10; i < TABLE_W - 10; i += 10) {
-    ctx.beginPath();
-    ctx.moveTo(i, netY - postH / 2 + 3);
-    ctx.lineTo(i, netY + postH / 2 - 3);
-    ctx.stroke();
-  }
-  for (let j = netY - postH / 2 + 5; j < netY + postH / 2 - 3; j += 6) {
-    ctx.beginPath();
-    ctx.moveTo(6, j);
-    ctx.lineTo(TABLE_W - 6, j);
-    ctx.stroke();
-  }
-
-  // Borda branca da rede
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.moveTo(6, netY + postH / 2 - 2);
-  ctx.lineTo(TABLE_W - 6, netY + postH / 2 - 2);
-  ctx.stroke();
-}
-
-function drawPaddle(paddle) {
-  const x = paddle.x - paddle.width / 2;
-  const y = paddle.y - paddle.height / 2;
-  const w = paddle.width;
-  const h = paddle.height;
-  const r = 6;
-
-  // Cabo da raquete
-  ctx.fillStyle = '#8B4513';
-  const handleLen = 35;
-  const handleW = 10;
-  if (paddle.y > TABLE_H / 2) {
-    ctx.fillRect(paddle.x - handleW / 2, paddle.y + h / 2, handleW, handleLen);
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(paddle.x - handleW / 2, paddle.y + h / 2, handleW, handleLen);
-  } else {
-    ctx.fillRect(paddle.x - handleW / 2, paddle.y - h / 2 - handleLen, handleW, handleLen);
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(paddle.x - handleW / 2, paddle.y - h / 2 - handleLen, handleW, handleLen);
-  }
-
-  // Sombra da raquete
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
-  roundRect(x + 3, y + 3, w, h, r);
-  ctx.fill();
-
-  // Corpo da raquete
-  ctx.fillStyle = paddle.color;
-  roundRect(x, y, w, h, r);
-  ctx.fill();
-
-  // Contorno preto grosso
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 3;
-  roundRect(x, y, w, h, r);
-  ctx.stroke();
-
-  // Borracha da raquete (borda mais escura)
-  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-  ctx.lineWidth = 2;
-  roundRect(x + 3, y + 3, w - 6, h - 6, r - 2);
-  ctx.stroke();
-
-  // Brilho
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  roundRect(x + 4, y + 4, w - 8, h / 3, r / 2);
-  ctx.fill();
-
-  // Indicador de drag ativo
-  if (paddle.isDragging) {
-    ctx.strokeStyle = '#FFE66D';
-    ctx.lineWidth = 3;
-    roundRect(x - 4, y - 4, w + 8, h + 8, r + 4);
-    ctx.stroke();
-  }
-}
-
-function drawBall() {
-  // Sombra da bola na mesa
-  const shadowOffset = 3;
-  ctx.beginPath();
-  ctx.ellipse(ball.x + shadowOffset, ball.y + shadowOffset, ball.radius * 0.9, ball.radius * 0.5, 0, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.fill();
-
-  // Rastro
-  ball.trail.forEach((pos, i) => {
-    const alpha = (i + 1) / ball.trail.length * 0.25;
-    const size = ball.radius * (i + 1) / ball.trail.length;
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-    ctx.fill();
-  });
-
-  // BOLA BRANCA
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fill();
-
-  // Contorno preto
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2.5;
-  ctx.stroke();
-
-  // Brilho sutil na bola branca
-  ctx.beginPath();
-  ctx.arc(ball.x - ball.radius * 0.3, ball.y - ball.radius * 0.3, ball.radius * 0.35, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(200,220,255,0.6)';
-  ctx.fill();
-
-  // Linha de rotacao
-  ctx.save();
-  ctx.translate(ball.x, ball.y);
-  ctx.rotate(ball.x * 0.15 + ball.y * 0.1);
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(-ball.radius * 0.5, 0);
-  ctx.lineTo(ball.radius * 0.5, 0);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function roundRect(x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-/* ============================
-   GAME LOOP
-   ============================ */
-function gameLoop() {
-  if (gameState !== 'playing' && gameState !== 'paused') return;
-
-  if (gameState === 'playing') {
-    updateCameraKeys();
-    updateAI();
-    updateBall();
-  }
-
-  draw();
-  animationId = requestAnimationFrame(gameLoop);
-}
-
-function startLoop() {
-  animationId = requestAnimationFrame(gameLoop);
-}
-
-function stopLoop() {
-  if (animationId) cancelAnimationFrame(animationId);
-}
-
-/* ============================
-   REDIMENSIONAMENTO
-   ============================ */
-function resizeCanvas() {
-  const container = document.getElementById('game-container');
-  const aspect = 9 / 16;
-  let w = container.clientWidth * 0.96;
-  let h = w / aspect;
-
-  if (h > container.clientHeight * 0.96) {
-    h = container.clientHeight * 0.96;
-    w = h * aspect;
-  }
-
-  canvas.width = 450;
-  canvas.height = 800;
-  canvas.style.width = w + 'px';
-  canvas.style.height = h + 'px';
-}
-
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
-// Inicializa configuracoes
-updateDifficulty();
-updateMaxScore();
-updateBallSpeed();
-updatePaddleSize();
+  updateClock();
+  setInterval(updateClock, 15000);
+
+  // Iniciar
+  playBtn.addEventListener('click', () => {
+    playBtn.disabled = true;
+
+    // Toca o som (o clique do usuário libera o autoplay)
+    audio.play().catch(() => {});
+
+    // Some com a tela de play e revela a interface
+    boot.classList.add('hide');
+    ui.classList.add('show');
+  }, { once:true });
 </script>
+
 </body>
 </html>
